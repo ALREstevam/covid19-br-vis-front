@@ -20,9 +20,9 @@ export function formatDate(date) {
 }
 
 export function addDays(date, days) {
-    var date = new Date(date.valueOf());
-    date.setDate(date.getDate() + days);
-    return date;
+    var dt = new Date(date.valueOf());
+    dt.setDate(dt.getDate() + days);
+    return dt;
 }
 
 export function toTimestamp(strDate){

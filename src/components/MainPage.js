@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { getCitiesBrJson, getCitiesBrGeoJson } from '../requests/covid'
+import { getCitiesBrJson } from '../requests/covid'
 import MapBox from './MapBox'
 import MyResponsiveLine from './LogPlot'
 

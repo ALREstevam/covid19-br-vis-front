@@ -1,5 +1,5 @@
 import React from 'react';
-import { formatDate, daysBetween, addDays } from '../common/date'
+import { formatDate } from '../common/date'
 
 const CityDataItem = ({ name, state, date, cases, deaths }) => {
     return (
