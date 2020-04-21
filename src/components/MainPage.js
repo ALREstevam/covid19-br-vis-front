@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { getCitiesBrJson } from '../requests/covid'
 import MapBox from './MapBox'
-import MyResponsiveLine from './LogPlot'
+//import MyResponsiveLine from './LogPlot'
 
 class MainPage extends Component {
 

@@ -1,7 +1,7 @@
 import env from '../env/envVars'
 
 export async function get(url, onSuccess, onFail, parser){
-    fetch(url)
+    fetch(url, {mode: 'cors'})
         .then(res => res.json())
         .then((data) => onSuccess(parser(data)))
         .catch((data)=>{
