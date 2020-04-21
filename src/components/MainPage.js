@@ -19,9 +19,9 @@ class MainPage extends Component {
                 <MapBox style={{ right: 0, left: 0, height:'95vh', width: '100%'}}
                     data={this.state.covidCasesGeoJson}
                     zoom={3} lat={-13.5958} lng={-54.4587}/>
-                <div style={{ width: '100%', height: '100vh', backgroundColor: 'red' }}>
+                {/*<div style={{ width: '100%', height: '100vh', backgroundColor: 'red' }}>
                     <MyResponsiveLine />
-                </div>
+                </div>*/}
             </div>
         );
     }
@@ -29,7 +29,6 @@ class MainPage extends Component {
     componentDidMount() {
         getCitiesBrJson(
             (data) => {
-                console.log(data)
                 this.setState({ covidCasesJson: data })
             },
             console.error,

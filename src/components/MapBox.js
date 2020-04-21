@@ -2,8 +2,9 @@ import React, { Component } from 'react';
 import mapboxgl from 'mapbox-gl';
 import { formatDate, daysBetween, addDays } from '../common/date'
 import CityDataItem from './CityDataItem'
+import env from '../env/envVars'
 
-mapboxgl.accessToken = 'pk.eyJ1IjoiYWVzdCIsImEiOiJjazkyNzZka2gwMnloM2xuNzZiMzEyODFrIn0.Yvk6wdCcwxvAB99OScpc2Q';
+mapboxgl.accessToken = env.MAPBOX_ACCESS_TOKEN
 
 const CitiesList = ({ cities }) => {
     return (
@@ -30,6 +31,8 @@ class MapBox extends Component {
         super(props);
 
         let initialDate = new Date('2020-02-25')
+
+        this.baseUrl = env.BACKEND_URL
 
         this.state = {
             lng: props.lng || 5,
@@ -203,12 +206,12 @@ class MapBox extends Component {
 
             map.addSource('covid', {
                 'type': 'geojson',
-                'data': 'http://localhost:5000/br/cities?response_type=geojson'
+                'data': `${this.baseUrl}/br/cities?response_type=geojson`
             })
 
             map.addSource('covid-cities-daily', {
                 'type': 'geojson',
-                'data': 'http://localhost:5000/br/cities-daily?response_type=geojson'
+                'data': `${this.baseUrl}/br/cities-daily?response_type=geojson`
             })
 
             map.on('moveend', () => {

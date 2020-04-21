@@ -61,7 +61,6 @@ let sample2 = [
 
 
 const MyResponsiveLine = ({ data /* see data tab */ }) => {
-    console.log('MyResponsiveLine')
     return (
     <ResponsiveLine
         data={data || sample2}
