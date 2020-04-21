@@ -1,7 +1,7 @@
 {
   "name": "covidfront",
   "version": "0.1.0",
-  "homepage":"http://ALREstevam.github.io/covid19-br-vis-front",
+  "homepage": "http://ALREstevam.github.io/covid19-br-vis-front",
   "private": true,
   "dependencies": {
     "@nivo/line": "^0.61.1",
@@ -11,7 +11,7 @@
     "mapbox-gl": "^1.9.1",
     "react": "^16.13.1",
     "react-dom": "^16.13.1",
-    "react-scripts": "3.4.1"
+    "react-scripts": "^3.4.1"
   },
   "scripts": {
     "start": "react-scripts start",
