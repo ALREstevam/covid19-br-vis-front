@@ -48,16 +48,16 @@ class MapBox extends Component {
 
     renderCityListItem = (index, key) => {
         const data = this.state.renderableCities[index]
-        
+
         return <CityDataItem
-                    name={data.city}
-                    state={data.state}
-                    date={new Date(data.date)}
-                    cases={data.totalCases}
-                    deaths={data.deaths}
-                    key={key}
-                    />
-  
+            name={data.city}
+            state={data.state}
+            date={new Date(data.date)}
+            cases={data.totalCases}
+            deaths={data.deaths}
+            key={key}
+        />
+
     }
 
     getVisibleOnMap() {
@@ -69,12 +69,12 @@ class MapBox extends Component {
         if (features) {
             features = features.sort((a, b) => new Date(a.date) - new Date(b.date))
                 .map(feature => feature.properties)
-                /*.map(data => {
-                    return {
-                        ...data,
-                        city: data.city === 'INDEFINIDA' ? `INDEFINIDA/${data.state}` : data.city,
-                    }
-                })*/
+            /*.map(data => {
+                return {
+                    ...data,
+                    city: data.city === 'INDEFINIDA' ? `INDEFINIDA/${data.state}` : data.city,
+                }
+            })*/
 
             //features = features.sort((a, b) => new Date(a.date) - new Date(b.date))
 
@@ -97,12 +97,18 @@ class MapBox extends Component {
     updateVisibleCities() {
         if (this.state.zoom > 5) {
             let update = this.getVisibleOnMap()
-            if (update && update.length > 0) {
+            if (update !== undefined) {
                 this.setState({
                     visibleCities: update,
                     renderableCities: update.sort((a, b) => a.totalCases - b.totalCases).reverse()
                 })
             }
+        }
+        else {
+            this.setState({
+                visibleCities: [],
+                renderableCities: []
+            })
         }
     }
 
@@ -114,7 +120,7 @@ class MapBox extends Component {
                 if (this.state.sliderValue <= this.state.maxDays) {
                     this.changeSlider(this.state.sliderValue + 1)
                 }
-                else{
+                else {
                     setTimeout(() => {
                         this.changeSlider(0)
                     }, 2000)
@@ -171,13 +177,13 @@ class MapBox extends Component {
 
         const daysAgoStringMaker = () => {
             let daysAgo = daysBetween(this.state.date, new Date())
-            if(daysAgo === 0){
+            if (daysAgo === 0) {
                 return '(hoje)'
             }
-            if(daysAgo === 1){
+            if (daysAgo === 1) {
                 return '(ontem)'
             }
-            else{
+            else {
                 return `(há ${daysAgo} dias)`
             }
         }
@@ -219,13 +225,13 @@ class MapBox extends Component {
 
                     </div>
                     <div>
-                    <div className='cityList'>
-                        { (this.state.renderableCities.length > 0) ? (<ReactList
-                            itemRenderer={/*::*/this.renderCityListItem}
-                            length={this.state.renderableCities.length}
-                            type='uniform'
-                            pageSize={3}
-                        />) : (<p>Zoom para mais detalhes.</p>) }
+                        <div className='cityList'>
+                            {(this.state.renderableCities.length > 0) ? (<ReactList
+                                itemRenderer={/*::*/this.renderCityListItem}
+                                length={this.state.renderableCities.length}
+                                type='uniform'
+                                pageSize={3}
+                            />) : (<p>Zoom para mais detalhes.</p>)}
                         </div>
                     </div>
                 </div>
@@ -246,14 +252,14 @@ class MapBox extends Component {
             maxPitch: 0,
             pitchWithRotate: false,
             logoPosition: 'bottom-right',
-            
+
         })
 
         this.setState({
             map: map
         })
 
-      
+
 
         map.on('move', () => {
             this.setState({
