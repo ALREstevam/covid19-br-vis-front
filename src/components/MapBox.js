@@ -64,26 +64,20 @@ class MapBox extends Component {
 
         let features = this.state.map.queryRenderedFeatures({ layers: ['all-cities'] });
         let cityData = {}
+        //let perDate = {}
 
 
         if (features) {
             features = features.sort((a, b) => new Date(a.date) - new Date(b.date))
                 .map(feature => feature.properties)
-            /*.map(data => {
-                return {
-                    ...data,
-                    city: data.city === 'INDEFINIDA' ? `INDEFINIDA/${data.state}` : data.city,
-                }
-            })*/
-
-            //features = features.sort((a, b) => new Date(a.date) - new Date(b.date))
 
             for (let feature of features) {
                 let city = feature.city
 
-                /*if (city === 'INDEFINIDA') {
-                    city = city + '/' + feature.properties.state
+                /*if (!perDate.hasOwnProperty(feature.date)) {
+                    
                 }*/
+
 
                 if (!cityData.hasOwnProperty(city) && feature.timestamp <= this.state.date.getTime()) {
                     cityData[city] = feature
@@ -273,12 +267,12 @@ class MapBox extends Component {
 
             map.addSource('covid', {
                 'type': 'geojson',
-                'data': `${this.baseUrl}/br/cities?response_type=geojson`
+                'data': `${this.baseUrl}/api/v1/br/cities?response_type=geojson`
             })
 
             map.addSource('covid-cities-daily', {
                 'type': 'geojson',
-                'data': `${this.baseUrl}/br/cities-daily?response_type=geojson`
+                'data': `${this.baseUrl}/api/v1/br/cities-daily?response_type=geojson`
             })
 
             map.on('moveend', () => {

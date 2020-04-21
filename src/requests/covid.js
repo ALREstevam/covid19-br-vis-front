@@ -12,12 +12,12 @@ export async function get(url, onSuccess, onFail, parser){
 
 
 export async function getCitiesBrJson(onSuccess, onFail, parser=(data)=>data){
-    const url = `${env.BACKEND_URL}/br/cities?response_type=json`
+    const url = `${env.BACKEND_URL}/api/v1/br/cities?response_type=json`
     return get(url, onSuccess, onFail, parser)
 }
 
 export async function getCitiesBrGeoJson(onSuccess, onFail, parser=(data)=>data){
-    const url = `${env.BACKEND_URL}/br/cities?response_type=geojson`
+    const url = `${env.BACKEND_URL}/api/v1/br/cities?response_type=geojson`
     return get(url, onSuccess, onFail, parser)
 } 
 
