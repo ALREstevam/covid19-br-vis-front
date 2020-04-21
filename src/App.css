@@ -80,3 +80,11 @@ a {
     max-height: 100vh;
   }
 }
+
+.cityListItem {
+  line-height: 1em;
+  margin-bottom: 6px;
+  margin-top: 6px;
+  padding: 10px;
+  background-color: whitesmoke;
+}

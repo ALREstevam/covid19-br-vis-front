@@ -3,7 +3,7 @@ import { formatDate } from '../common/date'
 
 const CityDataItem = ({ name, state, date, cases, deaths }) => {
     return (
-        <div style={styles.container}>
+        <div className='cityListItem'>
             <span style={styles.lastUpdate}>Última atualização {formatDate(date)}</span><br />
             <span style={styles.cityName}><b>{name}/{state}</b></span><br />
             <span style={styles.dataValue}><b>Casos:</b> {cases}</span><br />
@@ -12,10 +12,6 @@ const CityDataItem = ({ name, state, date, cases, deaths }) => {
 };
 
 const styles = {
-    container: {
-        lineHeight: '1em',
-        marginBottom: '15px'
-    },
     lastUpdate: {
         color: '#949494',
         fontSize: '.6em'

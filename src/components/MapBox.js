@@ -1,30 +1,22 @@
 import React, { Component } from 'react';
-import mapboxgl from 'mapbox-gl';
+import mapboxgl from 'mapbox-gl'
+import ReactList from 'react-list'
 import { formatDate, daysBetween, addDays } from '../common/date'
 import CityDataItem from './CityDataItem'
 import env from '../env/envVars'
 
 mapboxgl.accessToken = env.MAPBOX_ACCESS_TOKEN
 
+/*
 const CitiesList = ({ cities }) => {
     return (
         cities.length ?
-            <div className='cityList'>{cities
-                .sort((a, b) => a.totalCases - b.totalCases)
-                .reverse()
-                .map(data => (<CityDataItem
-                    name={data.city}
-                    state={data.state}
-                    date={new Date(data.date)}
-                    cases={data.totalCases}
-                    deaths={data.deaths}
-                    key={'cityItem' + data.city + data.state}
-                />
-                ))
-            }</div> :
+             :
             <p>(Zoom para mais detalhes)</p>
     )
 }
+
+*/
 
 class MapBox extends Component {
     constructor(props) {
@@ -34,6 +26,9 @@ class MapBox extends Component {
 
         this.baseUrl = env.BACKEND_URL
 
+        this.onSourceLoadBegin = this.props.onSourceLoadBegin
+        this.onSourceLoadFinished = this.props.onSourceLoadFinished
+
         this.state = {
             lng: props.lng || 5,
             lat: props.lat || 34,
@@ -42,6 +37,7 @@ class MapBox extends Component {
             sliderValue: daysBetween(new Date('2020-02-25'), new Date()),
             data: this.props.data,
             visibleCities: [],
+            renderableCities: [],
             animate: false,
             initialDate: initialDate,
             maxDays: daysBetween(initialDate, new Date()),
@@ -49,30 +45,65 @@ class MapBox extends Component {
         };
     }
 
+
+    renderCityListItem = (index, key) => {
+        const data = this.state.renderableCities[index]
+        
+        return <CityDataItem
+                    name={data.city}
+                    state={data.state}
+                    date={new Date(data.date)}
+                    cases={data.totalCases}
+                    deaths={data.deaths}
+                    key={key}
+                    />
+  
+    }
+
     getVisibleOnMap() {
-        if (this.state.zoom < 5) {
-            return []
-        }
+
         let features = this.state.map.queryRenderedFeatures({ layers: ['all-cities'] });
         let cityData = {}
 
+
         if (features) {
             features = features.sort((a, b) => new Date(a.date) - new Date(b.date))
+                .map(feature => feature.properties)
+                /*.map(data => {
+                    return {
+                        ...data,
+                        city: data.city === 'INDEFINIDA' ? `INDEFINIDA/${data.state}` : data.city,
+                    }
+                })*/
+
+            //features = features.sort((a, b) => new Date(a.date) - new Date(b.date))
 
             for (let feature of features) {
-                let city = feature.properties.city
+                let city = feature.city
 
-                if (city === 'INDEFINIDA') {
+                /*if (city === 'INDEFINIDA') {
                     city = city + '/' + feature.properties.state
-                }
+                }*/
 
-                if (!cityData.hasOwnProperty(city) && feature.properties.timestamp <= this.state.date.getTime()) {
-                    cityData[city] = feature.properties
+                if (!cityData.hasOwnProperty(city) && feature.timestamp <= this.state.date.getTime()) {
+                    cityData[city] = feature
                 }
             }
             return Object.keys(cityData).map(key => cityData[key]);
         }
         return []
+    }
+
+    updateVisibleCities() {
+        if (this.state.zoom > 5) {
+            let update = this.getVisibleOnMap()
+            if (update && update.length > 0) {
+                this.setState({
+                    visibleCities: update,
+                    renderableCities: update.sort((a, b) => a.totalCases - b.totalCases).reverse()
+                })
+            }
+        }
     }
 
     animatedStep() {
@@ -83,15 +114,12 @@ class MapBox extends Component {
                 if (this.state.sliderValue <= this.state.maxDays) {
                     this.changeSlider(this.state.sliderValue + 1)
                 }
-                if (this.state.sliderValue === this.state.maxDays) {
-                    setTimeout(()=>{
+                else{
+                    setTimeout(() => {
                         this.changeSlider(0)
                     }, 2000)
                 }
             }, 400);
-
-
-
         }
         else if (this.animateTimeout) {
             clearInterval(this.animateTimeout);
@@ -105,8 +133,10 @@ class MapBox extends Component {
         this.setState({
             sliderValue: dayNum,
             date: newDate,
-            visibleCities: this.getVisibleOnMap()
         })
+
+        this.updateVisibleCities()
+
         this.state.map.setFilter('covid-heatmap', ['<=', ['number', ['get', 'timestamp']], newDate.getTime()])
         this.state.map.setFilter('covid-heatmap-death', ['<=', ['number', ['get', 'timestamp']], newDate.getTime()])
         this.state.map.setFilter('covid-point', ['==', ['number', ['get', 'timestamp']], newDate.getTime()])
@@ -131,17 +161,32 @@ class MapBox extends Component {
         }
     }
 
-    handleAnimateChange(event){
+    handleAnimateChange(event) {
         this.setState({ animate: event.target.checked }, () => {
             this.animatedStep()
         })
     }
 
     render() {
+
+        const daysAgoStringMaker = () => {
+            let daysAgo = daysBetween(this.state.date, new Date())
+            if(daysAgo === 0){
+                return '(hoje)'
+            }
+            if(daysAgo === 1){
+                return '(ontem)'
+            }
+            else{
+                return `(há ${daysAgo} dias)`
+            }
+        }
+
+
         return (
             <div style={this.props.containerStyle}>
                 <div className='console'>
-                    <h1>Casos de COVID-19 no Brasil até o dia {formatDate(this.state.date)} (há {daysBetween(this.state.date, new Date())} dias)</h1>
+                    <h1>COVID-19 no Brasil até o dia {formatDate(this.state.date)} {daysAgoStringMaker()}</h1>
                     <p>Fonte de dados: <a href='https://covid19br.wcota.me/'>Número de casos confirmados de COVID-19 no Brasil</a></p>
                     <div className='session sliderbar'>
                         <h2>Data {formatDate(this.state.date)}: <label className='active-hour'>{this.state.hour}</label></h2>
@@ -174,7 +219,14 @@ class MapBox extends Component {
 
                     </div>
                     <div>
-                        <CitiesList cities={this.state.visibleCities} />
+                    <div className='cityList'>
+                        { (this.state.renderableCities.length > 0) ? (<ReactList
+                            itemRenderer={/*::*/this.renderCityListItem}
+                            length={this.state.renderableCities.length}
+                            type='uniform'
+                            pageSize={3}
+                        />) : (<p>Zoom para mais detalhes.</p>) }
+                        </div>
                     </div>
                 </div>
                 <div style={this.props.style} ref={el => this.mapContainer = el} />
@@ -183,16 +235,25 @@ class MapBox extends Component {
     }
 
     componentDidMount() {
+        this.onSourceLoadBegin && this.onSourceLoadBegin()
+
         const map = new mapboxgl.Map({
             container: this.mapContainer,
-            style: 'mapbox://styles/aest/ck93dlpxn00v21imgp8zz3y6x',
+            style: 'mapbox://styles/aest/ck93dlpxn00v21imgp8zz3y6x?optimize=true',
             center: [this.state.lng, this.state.lat],
-            zoom: this.state.zoom
+            zoom: this.state.zoom,
+            minPitch: 0,
+            maxPitch: 0,
+            pitchWithRotate: false,
+            logoPosition: 'bottom-right',
+            
         })
 
         this.setState({
             map: map
         })
+
+      
 
         map.on('move', () => {
             this.setState({
@@ -215,9 +276,7 @@ class MapBox extends Component {
             })
 
             map.on('moveend', () => {
-                this.setState({
-                    visibleCities: this.getVisibleOnMap()
-                })
+                this.updateVisibleCities()
             });
 
             map.addLayer({
@@ -240,13 +299,13 @@ class MapBox extends Component {
                     // to create a blur-like effect.
                     'heatmap-color': [
                         'interpolate', ['linear'], ['heatmap-density'],
-                        0, 'rgba(255,237,68,0)', 
+                        0, 'rgba(255,237,68,0)',
                         0.1, '#ff9671',
                         0.15, '#ffc75f',
                         0.2, '#e24f4f',
-                        0.4, '#c02f36', 
-                        0.6, '#9e001f', 
-                        0.8, '#7d0006', 
+                        0.4, '#c02f36',
+                        0.6, '#9e001f',
+                        0.8, '#7d0006',
                         1, '#5e0000'
                     ],
                     // Adjust the heatmap radius by zoom level
@@ -329,51 +388,20 @@ class MapBox extends Component {
                 'source': 'covid',
                 'minzoom': 5,
                 'paint': {
-                    'circle-color': [
-                        'interpolate', ['linear'], ['number', ['get', 'totalCases']],
-                        1, 'rgba(33,102,172,0)',
-                    ],
-                    'circle-stroke-color': 'white', 'circle-stroke-width': 0,
+                    'circle-color': 'rgba(0,0,0,0)',
+                    'circle-stroke-width': 0,
                 },
             },
-                'waterway-label'
             );
-            // Transition from heatmap to circle layer by zoom level
-            /*map.addLayer({
-                id: 'collisions',
-                type: 'circle',
-                source: 'car',
-                paint: {
-                    'circle-radius': [
-                        'interpolate',
-                        ['linear'],
-                        ['number', ['get', 'newCases']],
-                        0, 4,
-                        5, 24
-                    ],
-                    'circle-color': [
-                        'interpolate',
-                        ['linear'],
-                        ['number', ['get', 'newCases']],
-                        0, '#2DC4B2',
-                        1, '#3BB3C3',
-                        2, '#669EC4',
-                        3, '#8B88B6',
-                        4, '#A2719B',
-                        5, '#AA5E79'
-                    ],
-                    'circle-opacity': 0.8
-                },
-                //filter: ['==', ['number', ['get', 'Hour']], 12]
-            });*/
+
         });
 
-        //
-        /*map.on('load', function () {
-            // Add a geojson point source.
-            // Heatmap layers also work with a vector tile source.
-        }*/
+        map.on('idle', () => {
+            this.onSourceLoadFinished && !this.state.animate && this.onSourceLoadFinished()
+        })
     }
 }
+
+
 
 export default MapBox;
