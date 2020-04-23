@@ -80,12 +80,6 @@ class MainPage extends Component {
     }
 
     componentDidMount() {
-        getCitiesBrJson(
-            (data) => {
-                this.setState({ covidCasesJson: data })
-            },
-            console.error,
-        )
     }
 
     componentWillUnmount() {

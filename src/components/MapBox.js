@@ -64,7 +64,7 @@ class MapBox extends Component {
 
         let features = this.state.map.queryRenderedFeatures({ layers: ['all-cities'] });
         let cityData = {}
-        //let perDate = {}
+        let perDate = {}
 
 
         if (features) {
@@ -74,29 +74,32 @@ class MapBox extends Component {
             for (let feature of features) {
                 let city = feature.city
 
-                /*if (!perDate.hasOwnProperty(feature.date)) {
-                    
-                }*/
+                if (!perDate.hasOwnProperty(feature.date)) {
+                    perDate[feature.date] = []
+                }
+                perDate[feature.date].push(feature)
 
 
                 if (!cityData.hasOwnProperty(city) && feature.timestamp <= this.state.date.getTime()) {
                     cityData[city] = feature
                 }
             }
-            return Object.keys(cityData).map(key => cityData[key]);
+
+            return [Object.keys(cityData).map(key => cityData[key]), perDate];
         }
-        return []
+        return [[], []]
     }
 
     updateVisibleCities() {
         if (this.state.zoom > 5) {
-            let update = this.getVisibleOnMap()
-            if (update !== undefined) {
-                this.setState({
-                    visibleCities: update,
-                    renderableCities: update.sort((a, b) => a.totalCases - b.totalCases).reverse()
-                })
-            }
+            let cityData, perDate
+            [cityData, perDate] = this.getVisibleOnMap()
+
+            this.setState({
+                visibleCities: cityData,
+                visibleCitiesPerDate: perDate,
+                renderableCities: cityData.sort((a, b) => a.totalCases - b.totalCases).reverse()
+            })
         }
         else {
             this.setState({
@@ -267,12 +270,12 @@ class MapBox extends Component {
 
             map.addSource('covid', {
                 'type': 'geojson',
-                'data': `${this.baseUrl}/api/v1/br/cities?response_type=geojson`
+                'data': `${this.baseUrl}/api/v1/br/cities.geojson`
             })
 
             map.addSource('covid-cities-daily', {
                 'type': 'geojson',
-                'data': `${this.baseUrl}/api/v1/br/cities-daily?response_type=geojson`
+                'data': `${this.baseUrl}/api/v1/br/cities-daily.geojson`
             })
 
             map.on('moveend', () => {
