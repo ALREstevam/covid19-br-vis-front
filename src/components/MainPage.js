@@ -3,6 +3,7 @@ import { getCitiesBrJson } from '../requests/covid'
 import MapBox from './MapBox'
 //import MyResponsiveLine from './LogPlot'
 import LoadingBar from 'react-top-loading-bar';
+import Footer from './Footer'
 
 class MainPage extends Component {
 
@@ -75,6 +76,7 @@ class MainPage extends Component {
                 {/*<div style={{ width: '100%', height: '100vh', backgroundColor: 'red' }}>
                     <MyResponsiveLine />
                 </div>*/}
+                <Footer/>
             </div>
         );
     }

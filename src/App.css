@@ -53,8 +53,8 @@ a {
   text-align: center;
 }
 
-.cityList{
-  overflow-y:auto;
+.cityList {
+  overflow-y: auto;
   display: block;
   max-height: 45vh;
 }
@@ -62,7 +62,7 @@ a {
 
 .console {
   position: absolute;
-  top:0px;
+  top: 0px;
   width: 240px;
   margin: 10px;
   padding: 10px 20px;
@@ -75,7 +75,7 @@ a {
   .console {
     position: unset;
     z-index: 99;
-    top:0px;
+    top: 0px;
     width: 85%;
     background-color: white;
     max-height: 100vh;
@@ -88,4 +88,39 @@ a {
   margin-top: 6px;
   padding: 10px;
   background-color: whitesmoke;
+}
+
+a:link {
+  text-decoration: none;
+}
+
+a:visited {
+  text-decoration: none;
+}
+
+a:hover {
+  text-decoration: underline;
+}
+
+a:active {
+  text-decoration: underline;
+}
+
+.footer {
+  background-color: #5c5c5c;
+  margin-top: 50px;
+  clear: both;
+  padding: 50px;
+  min-height: 200px;
+  text-align: center;
+  font-size: 1.1em;
+  border-top: 10px solid #136BA1;
+}
+
+.footer p{
+  color: #e6f0f0;
+}
+
+.footer a{
+  color: #abcfcf;
 }
