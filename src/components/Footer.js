@@ -5,13 +5,6 @@ export default function Footer() {
     return (
         <div className='footer'>
 
-            <p style={{ 'fontSize': '1.3em' }}>
-                <strong>
-                    Desenvolvido por André Estevam
-                </strong>
-            </p>
-
-
             <strong style={{'fontSize': '1.2em'}}>Importante:</strong>
             <p>Não sou especialista em visualização de dados nem em disseminação de doenças, então
             não confie nos dados deste site, é apenas uma tentativa de visualizar a disseminação
