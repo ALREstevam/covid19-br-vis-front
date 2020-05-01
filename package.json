@@ -4,6 +4,7 @@
   "homepage": "http://ALREstevam.github.io/covid19-br-vis-front",
   "private": true,
   "dependencies": {
+    "@babel/runtime": "^7.9.6",
     "@nivo/line": "^0.61.1",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
