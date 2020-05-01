@@ -7,6 +7,18 @@ import Footer from './Footer'
 import LinePlot from './LinePlot'
 import { perDate2NivoDataset, perDate2NivoChartTitle } from '../common/toNivoDataConverter'
 
+
+const ScrollButtons = () => (
+    <div className='scrollButtons'>
+        <div className='scrollButton' onClick={()=>{
+            document.documentElement.scrollTop = document.body.scrollTop = ((window.pageYOffset || document.documentElement.scrollTop)-500);
+        }}>˄</div>
+        <div className='scrollButton' onClick={()=>{
+            document.documentElement.scrollTop = document.body.scrollTop = ((window.pageYOffset || document.documentElement.scrollTop)+500);
+        }}>˅</div>
+    </div>
+)
+
 const GrowthFactorMessage = () => (
 
     <div className='nivoCharts'>
@@ -87,7 +99,7 @@ class MainPage extends Component {
                     loadingBarProgress: this.state.loadingBarProgress + Math.round(Math.random() * 5)
                 })
             },
-            800
+            1200
         ))
 
     }
@@ -122,6 +134,7 @@ class MainPage extends Component {
                     color='red'
                     onLoaderFinished={this.onLoaderFinished}
                 />
+                <ScrollButtons/>
                 <MapBox style={{ right: 0, left: 0, height: '95vh', width: '100%' }}
                     data={this.state.covidCasesGeoJson}
                     zoom={3} lat={-13.5958} lng={-54.4587}
