@@ -6,6 +6,11 @@ export default function Footer() {
         <div className='footer'>
 
             <strong style={{'fontSize': '1.2em'}}>Importante:</strong>
+
+            <p>
+            <strong>Este é apenas um experimento em visualização de dados.</strong>
+            </p>
+
             <p>Não sou especialista em visualização de dados nem em disseminação de doenças, então
             não confie nos dados deste site, é apenas uma tentativa de visualizar a disseminação
             da doença e pode (certamente não) corresponder com a realdade.</p>
@@ -17,7 +22,7 @@ export default function Footer() {
             </p>
 
             <p>
-            Sugestões ou correções podem e dever ser enviadas pelo GitHub (link a seguir).
+            Sugestões ou correções podem ser enviadas pelo GitHub (link a seguir).
             </p>
 
             <hr/>
