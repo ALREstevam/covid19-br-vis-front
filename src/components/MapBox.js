@@ -7,17 +7,6 @@ import env from '../env/envVars'
 
 mapboxgl.accessToken = env.MAPBOX_ACCESS_TOKEN
 
-/*
-const CitiesList = ({ cities }) => {
-    return (
-        cities.length ?
-             :
-            <p>(Zoom para mais detalhes)</p>
-    )
-}
-
-*/
-
 class MapBox extends Component {
     constructor(props) {
         super(props);
@@ -42,6 +31,7 @@ class MapBox extends Component {
             initialDate: initialDate,
             maxDays: daysBetween(initialDate, new Date()),
             mapType: 'infected',
+            loadState: 'loading'
         };
     }
 
@@ -84,29 +74,22 @@ class MapBox extends Component {
                     cityData[city] = feature
                 }
             }
-
             return [Object.keys(cityData).map(key => cityData[key]), perDate];
         }
         return [[], []]
     }
 
-    updateVisibleCities() {
-        if (this.state.zoom > 5) {
-            let cityData, perDate
-            [cityData, perDate] = this.getVisibleOnMap()
+    async updateVisibleCities() {
+        let cityData, perDate
+        [cityData, perDate] = this.getVisibleOnMap()
 
-            this.setState({
-                visibleCities: cityData,
-                visibleCitiesPerDate: perDate,
-                renderableCities: cityData.sort((a, b) => a.totalCases - b.totalCases).reverse()
-            })
-        }
-        else {
-            this.setState({
-                visibleCities: [],
-                renderableCities: []
-            })
-        }
+        this.setState({
+            visibleCities: cityData,
+            visibleCitiesPerDate: perDate,
+            renderableCities: cityData.sort((a, b) => a.totalCases - b.totalCases).reverse()
+        })
+        
+        this.props.onVisibleCitiesChange && this.state.loadState === 'loaded' && this.props.onVisibleCitiesChange(cityData, perDate)
     }
 
     animatedStep() {
@@ -118,11 +101,9 @@ class MapBox extends Component {
                     this.changeSlider(this.state.sliderValue + 1)
                 }
                 else {
-                    setTimeout(() => {
-                        this.changeSlider(0)
-                    }, 2000)
+                    this.changeSlider(0)
                 }
-            }, 400);
+            }, 600);
         }
         else if (this.animateTimeout) {
             clearInterval(this.animateTimeout);
@@ -133,16 +114,15 @@ class MapBox extends Component {
     changeSlider(value) {
         let dayNum = parseInt(value)
         let newDate = addDays(this.state.initialDate, dayNum)
+        
+        this.state.map.setFilter('covid-heatmap', ['<=', ['number', ['get', 'timestamp']], newDate.getTime()])
+        this.state.map.setFilter('covid-heatmap-death', ['<=', ['number', ['get', 'timestamp']], newDate.getTime()])
+        this.state.map.setFilter('covid-point', ['==', ['number', ['get', 'timestamp']], newDate.getTime()])
+
         this.setState({
             sliderValue: dayNum,
             date: newDate,
         })
-
-        this.updateVisibleCities()
-
-        this.state.map.setFilter('covid-heatmap', ['<=', ['number', ['get', 'timestamp']], newDate.getTime()])
-        this.state.map.setFilter('covid-heatmap-death', ['<=', ['number', ['get', 'timestamp']], newDate.getTime()])
-        this.state.map.setFilter('covid-point', ['==', ['number', ['get', 'timestamp']], newDate.getTime()])
     }
 
     handleMapTypeChange(event) {
@@ -189,10 +169,10 @@ class MapBox extends Component {
         return (
             <div style={this.props.containerStyle}>
                 <div className='console'>
-                    <h1>COVID-19 no Brasil até o dia {formatDate(this.state.date)} {daysAgoStringMaker()}</h1>
+                    <h1 className='consoleTitle'>COVID-19 no Brasil até o dia {formatDate(this.state.date)} {daysAgoStringMaker()}</h1>
                     <p>Fonte de dados: <a href='https://covid19br.wcota.me/'>Número de casos confirmados de COVID-19 no Brasil</a></p>
                     <div className='session sliderbar'>
-                        <h2>Data {formatDate(this.state.date)}: <label className='active-hour'>{this.state.hour}</label></h2>
+                        <strong>{formatDate(this.state.date)}: <label className='active-hour'>{this.state.hour}</label></strong>
                         <form>
                             <label>
                                 <input name="animate" type="checkbox" checked={this.state.animate}
@@ -228,11 +208,24 @@ class MapBox extends Component {
                                 length={this.state.renderableCities.length}
                                 type='uniform'
                                 pageSize={3}
-                            />) : (<p>Zoom para mais detalhes.</p>)}
+                            />)
+                                :
+                                (<p style={{ textAlign: 'center', fontStyle: 'italic' }}>
+                                    (Use o zoom e a navegação pelo mapa para ver os detalhes de cada localidade.)</p>)}
                         </div>
+                    </div>
+                    <div style={{ color: 'gray', fontSize: '0.5em', bottom: 0, position: 'absolute' }}>
+                        <p>
+                            <span><strong>Zoom: </strong>{this.state.zoom}</span>
+                            <span> | </span>
+                            <span><strong>Centro: </strong>{this.state.lat}, {this.state.lng}</span>
+                            <span> | </span>
+                            <span><strong>Cidades visíveis: </strong>{this.state.visibleCities.length}</span>
+                        </p>
                     </div>
                 </div>
                 <div style={this.props.style} ref={el => this.mapContainer = el} />
+
             </div>
         )
     }
@@ -255,8 +248,6 @@ class MapBox extends Component {
         this.setState({
             map: map
         })
-
-
 
         map.on('move', () => {
             this.setState({
@@ -389,7 +380,7 @@ class MapBox extends Component {
                 'id': 'all-cities',
                 'type': 'circle',
                 'source': 'covid',
-                'minzoom': 5,
+                'minzoom': 2.8,
                 'paint': {
                     'circle-color': 'rgba(0,0,0,0)',
                     'circle-stroke-width': 0,
@@ -401,6 +392,13 @@ class MapBox extends Component {
 
         map.on('idle', () => {
             this.onSourceLoadFinished && !this.state.animate && this.onSourceLoadFinished()
+
+            if (this.state.loadState === 'loading') {
+                this.setState({
+                    loadState: 'loaded'
+                })
+                this.updateVisibleCities()
+            }
         })
     }
 }

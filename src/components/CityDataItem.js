@@ -6,7 +6,8 @@ const CityDataItem = ({ name, state, date, cases, deaths }) => {
         <div className='cityListItem'>
             <span style={styles.lastUpdate}>Última atualização {formatDate(date)}</span><br />
             <span style={styles.cityName}><b>{name}/{state}</b></span><br />
-            <span style={styles.dataValue}><b>Casos:</b> {cases}</span><br />
+            <span style={styles.dataValue}><b>Casos:</b> {cases}</span>
+            <span> | </span>
             <span style={styles.dataValue}><b>Óbitos:</b> {deaths}</span>
         </div>)
 };

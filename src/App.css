@@ -16,20 +16,52 @@ body {
 }
 
 h1 {
-  font-size: 20px;
+  font-size: 3em;
   line-height: 30px;
 }
 
 h2 {
-  font-size: 14px;
+  font-size: 2em;
   line-height: 20px;
   margin-bottom: 10px;
 }
+
+h3 {
+  font-size: 1.7em;
+  line-height: 20px;
+  margin-bottom: 10px;
+}
+
 
 a {
   text-decoration: none;
   color: #2dc4b2;
 }
+
+
+code {
+  background-color: #eee;
+  border-radius: 3px;
+  font-family: courier, monospace;
+  padding: 0 3px;
+  border: 1px solid #ccc
+}
+
+.nivoCharts > h1,
+.nivoCharts > h2,
+.nivoCharts > h3,
+.nivoCharts > ul,
+.nivoCharts > ol,
+.nivoCharts > p {
+  margin-left: 50px;
+  margin-right: 50px;
+}
+
+
+.consoleTitle {
+  font-size: 2.2em;
+}
+
 
 
 
@@ -117,10 +149,10 @@ a:active {
   border-top: 10px solid #136BA1;
 }
 
-.footer p{
+.footer p {
   color: #e6f0f0;
 }
 
-.footer a{
+.footer a {
   color: #abcfcf;
 }
