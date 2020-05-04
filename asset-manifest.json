@@ -1,22 +1,26 @@
 {
   "files": {
-    "main.css": "/covid19-br-vis-front/static/css/main.40a39a18.chunk.css",
-    "main.js": "/covid19-br-vis-front/static/js/main.30b5f5ca.chunk.js",
-    "main.js.map": "/covid19-br-vis-front/static/js/main.30b5f5ca.chunk.js.map",
+    "main.css": "/covid19-br-vis-front/static/css/main.f66030f2.chunk.css",
+    "main.js": "/covid19-br-vis-front/static/js/main.bc9d67f4.chunk.js",
+    "main.js.map": "/covid19-br-vis-front/static/js/main.bc9d67f4.chunk.js.map",
     "runtime-main.js": "/covid19-br-vis-front/static/js/runtime-main.cb94a6c0.js",
     "runtime-main.js.map": "/covid19-br-vis-front/static/js/runtime-main.cb94a6c0.js.map",
-    "static/js/2.90a75b6c.chunk.js": "/covid19-br-vis-front/static/js/2.90a75b6c.chunk.js",
-    "static/js/2.90a75b6c.chunk.js.map": "/covid19-br-vis-front/static/js/2.90a75b6c.chunk.js.map",
+    "static/css/2.cc9ce7f8.chunk.css": "/covid19-br-vis-front/static/css/2.cc9ce7f8.chunk.css",
+    "static/js/2.c5685993.chunk.js": "/covid19-br-vis-front/static/js/2.c5685993.chunk.js",
+    "static/js/2.c5685993.chunk.js.map": "/covid19-br-vis-front/static/js/2.c5685993.chunk.js.map",
     "index.html": "/covid19-br-vis-front/index.html",
-    "precache-manifest.d5a1cfd1c175c37b7f12d9c6e25f0fb8.js": "/covid19-br-vis-front/precache-manifest.d5a1cfd1c175c37b7f12d9c6e25f0fb8.js",
+    "precache-manifest.171184d7f46f9ddd1a3a072f59e0a5e1.js": "/covid19-br-vis-front/precache-manifest.171184d7f46f9ddd1a3a072f59e0a5e1.js",
     "service-worker.js": "/covid19-br-vis-front/service-worker.js",
-    "static/css/main.40a39a18.chunk.css.map": "/covid19-br-vis-front/static/css/main.40a39a18.chunk.css.map",
-    "static/js/2.90a75b6c.chunk.js.LICENSE.txt": "/covid19-br-vis-front/static/js/2.90a75b6c.chunk.js.LICENSE.txt"
+    "static/css/2.cc9ce7f8.chunk.css.map": "/covid19-br-vis-front/static/css/2.cc9ce7f8.chunk.css.map",
+    "static/css/main.f66030f2.chunk.css.map": "/covid19-br-vis-front/static/css/main.f66030f2.chunk.css.map",
+    "static/js/2.c5685993.chunk.js.LICENSE.txt": "/covid19-br-vis-front/static/js/2.c5685993.chunk.js.LICENSE.txt",
+    "static/media/notifications.css": "/covid19-br-vis-front/static/media/notification.c0d3c94c.eot"
   },
   "entrypoints": [
     "static/js/runtime-main.cb94a6c0.js",
-    "static/js/2.90a75b6c.chunk.js",
-    "static/css/main.40a39a18.chunk.css",
-    "static/js/main.30b5f5ca.chunk.js"
+    "static/css/2.cc9ce7f8.chunk.css",
+    "static/js/2.c5685993.chunk.js",
+    "static/css/main.f66030f2.chunk.css",
+    "static/js/main.bc9d67f4.chunk.js"
   ]
 }
