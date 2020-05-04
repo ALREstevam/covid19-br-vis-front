@@ -20,19 +20,19 @@ body {
 }
 
 h1 {
-  font-size: 3em;
-  line-height: 30px;
+  font-size: 2.1em;
+  line-height: 1em;
 }
 
 h2 {
-  font-size: 2em;
-  line-height: 20px;
-  margin-bottom: 10px;
+  font-size: 1.9em;
+  line-height: 1em;
+  margin-bottom: 12px;
 }
 
 h3 {
   font-size: 1.7em;
-  line-height: 20px;
+  line-height: 1em;
   margin-bottom: 10px;
 }
 
@@ -66,9 +66,6 @@ code {
   font-size: 2.2em;
 }
 
-
-
-
 .session {
   margin-bottom: 20px;
 }
@@ -98,13 +95,14 @@ code {
 
 .console {
   position: absolute;
-  top: 0px;
+  /*top: 0px;*/
   width: 240px;
   margin: 10px;
   padding: 10px 20px;
   background-color: white;
   z-index: 99;
   height: 90vh;
+  box-shadow: 10px 10px 28px -16px rgba(0,0,0,0.37);
 }
 
 
@@ -157,8 +155,8 @@ a:active {
   right: 10px;
   z-index: 99; 
   width: 10%;
-  max-width: 100px;
-  height: 15vh;
+  max-width: 80px;
+  height: 10vh;
   cursor: pointer;
   color: whitesmoke;
   text-align: center;
@@ -171,14 +169,25 @@ a:active {
   width: 100%;
   height: 50%;
   background-color: rgba(0, 0, 0, .5);
-  display: inline-block;
   vertical-align: middle;
   line-height: normal;
   transition: .1s;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .scrollButton:hover{
   background-color: rgba(0, 0, 0, .6);
+}
+
+.lock{
+  z-index: 999; 
+  height: 10vh;
+  background-color: whitesmoke;
+  text-align: center;
+  vertical-align: middle;
+  font-weight: bold;
 }
 
 @media screen and (max-width: 500px) {

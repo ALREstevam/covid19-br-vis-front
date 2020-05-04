@@ -5,17 +5,17 @@ import MapBox from './MapBox'
 import LoadingBar from 'react-top-loading-bar';
 import Footer from './Footer'
 import LinePlot from './LinePlot'
-import { perDate2NivoDataset, perDate2NivoChartTitle } from '../common/toNivoDataConverter'
+import { PerDateNivoDataset, perDate2NivoChartTitle } from '../common/toNivoDataConverter'
 
 
 const ScrollButtons = () => (
     <div className='scrollButtons'>
         <div className='scrollButton' onClick={()=>{
             document.documentElement.scrollTop = document.body.scrollTop = ((window.pageYOffset || document.documentElement.scrollTop)-500);
-        }}>˄</div>
+        }}><span>˄</span></div>
         <div className='scrollButton' onClick={()=>{
             document.documentElement.scrollTop = document.body.scrollTop = ((window.pageYOffset || document.documentElement.scrollTop)+500);
-        }}>˅</div>
+        }}><span>˅</span></div>
     </div>
 )
 
@@ -47,6 +47,9 @@ class MainPage extends Component {
 
     constructor(props) {
         super(props)
+        this.nivoDataset = new PerDateNivoDataset()
+        this.timers = []
+
         this.state = {
             covidCasesGeoJson: undefined,
             covidCasesJson: undefined,
@@ -54,12 +57,9 @@ class MainPage extends Component {
             visibleCities: [],
             visibleCitiesPerDate: {},
             selectedDate: new Date(),
-            perDayChartData: perDate2NivoDataset({}),
+            perDayChartData: this.nivoDataset.constructDataset({}, new Date()),
             perDateChartName: 'COVID-19 em todo o Brasil'
         }
-
-        this.timers = []
-
     }
 
     clearIntervals() {
@@ -114,7 +114,7 @@ class MainPage extends Component {
 
     updatePlots = async () => {
         this.setState({
-            perDayChartData: perDate2NivoDataset(this.state.visibleCitiesPerDate),
+            perDayChartData: this.nivoDataset.constructDataset(this.state.visibleCitiesPerDate, this.state.selectedDate),
             perDateChartName: 'COVID-19 em ' + perDate2NivoChartTitle(this.state.visibleCitiesPerDate, "todo o Brasil")
         })
     }
@@ -122,8 +122,6 @@ class MainPage extends Component {
     selectedDateChangedHandler = (date) => {
         this.setState({ selectedDate: date })
     }
-
-
 
     render() {
         return (
@@ -135,6 +133,7 @@ class MainPage extends Component {
                     onLoaderFinished={this.onLoaderFinished}
                 />
                 <ScrollButtons/>
+                
                 <MapBox style={{ right: 0, left: 0, height: '95vh', width: '100%' }}
                     data={this.state.covidCasesGeoJson}
                     zoom={3} lat={-13.5958} lng={-54.4587}
@@ -146,7 +145,7 @@ class MainPage extends Component {
                 <div className='nivoCharts'>
                     <h2>{this.state.perDateChartName}</h2>
                     <h3>Casos e óbitos</h3>
-                    <div style={{ width: '100%', height: '100vh' }}>
+                    <div style={{ width: '100%', height: '80vh' }}>
                         <LinePlot
                             data={[this.state.perDayChartData.deaths, this.state.perDayChartData.cases]}
                             colors={['#fa4343', '#0068d2']} 
@@ -171,6 +170,10 @@ class MainPage extends Component {
                     {/*<div style={{ width: '100%', height: '100vh', backgroundColor: 'red' }}>
                     <MyResponsiveLine />
                 </div>*/}
+                </div>
+                <div style={{marginLeft: 50, marginRight: 50}}>
+                    <hr/>
+                    <p>Fonte de dados para o mapa e os gráficos: <a href='https://covid19br.wcota.me/'>Número de casos confirmados de COVID-19 no Brasil</a></p>
                 </div>
                 <Footer />
             </div>

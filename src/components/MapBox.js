@@ -4,6 +4,8 @@ import ReactList from 'react-list'
 import { formatDate, daysBetween, addDays } from '../common/date'
 import CityDataItem from './CityDataItem'
 import env from '../env/envVars'
+//import Lock from './Lock'
+import {NotificationManager} from 'react-notifications';
 
 mapboxgl.accessToken = env.MAPBOX_ACCESS_TOKEN
 
@@ -31,55 +33,38 @@ class MapBox extends Component {
             initialDate: initialDate,
             maxDays: daysBetween(initialDate, new Date()),
             mapType: 'infected',
-            loadState: 'loading'
+            loadState: 'loading',
+            isMapInteractive: true,
         };
     }
 
 
     renderCityListItem = (index, key) => {
         const data = this.state.renderableCities[index]
-
-        return <CityDataItem
-            name={data.city}
-            state={data.state}
-            date={new Date(data.date)}
-            cases={data.totalCases}
-            deaths={data.deaths}
-            key={key}
-        />
-
+        return <CityDataItem name={data.city} state={data.state} date={new Date(data.date)} 
+        cases={data.totalCases} deaths={data.deaths} key={key}/>
     }
 
     getVisibleOnMap() {
-
         let features = this.state.map.queryRenderedFeatures({ layers: ['all-cities'] });
         let cityData = {}
         let perDate = {}
-
-
         if (features) {
             features = features.sort((a, b) => new Date(a.date) - new Date(b.date))
                 .map(feature => feature.properties)
 
             for (let feature of features) {
                 let city = feature.city
-
-                if (!perDate.hasOwnProperty(feature.date)) {
-                    perDate[feature.date] = []
-                }
+                if (!perDate.hasOwnProperty(feature.date)) perDate[feature.date] = []
+                if (!cityData.hasOwnProperty(city) && feature.timestamp <= this.state.date.getTime()) cityData[city] = feature
                 perDate[feature.date].push(feature)
-
-
-                if (!cityData.hasOwnProperty(city) && feature.timestamp <= this.state.date.getTime()) {
-                    cityData[city] = feature
-                }
             }
             return [Object.keys(cityData).map(key => cityData[key]), perDate];
         }
         return [[], []]
     }
 
-    async updateVisibleCities() {
+    updateVisibleCities() {
         let cityData, perDate
         [cityData, perDate] = this.getVisibleOnMap()
 
@@ -88,24 +73,35 @@ class MapBox extends Component {
             visibleCitiesPerDate: perDate,
             renderableCities: cityData.sort((a, b) => a.totalCases - b.totalCases).reverse()
         })
-        
-        this.props.onVisibleCitiesChange && this.state.loadState === 'loaded' && this.props.onVisibleCitiesChange(cityData, perDate)
+
+        this.props.onVisibleCitiesChange &&
+            this.state.loadState === 'loaded' &&
+            this.props.onVisibleCitiesChange(cityData, perDate)
     }
 
     animatedStep() {
         if (this.state.animate) {
-            this.changeSlider(0)
+            this.setInteractive(false)
+            NotificationManager.info("A interação com o mapa será desetivada enquanto a animação ocorrer.", "Animação ativada")
+            
+            if (this.state.sliderValue >= this.state.maxDays) {
+                this.changeSlider(0)
+                this.onSliderChangeEndedAsync(0)
+            }
 
             this.animateTimeout = setInterval(() => {
                 if (this.state.sliderValue <= this.state.maxDays) {
                     this.changeSlider(this.state.sliderValue + 1)
+                    this.onSliderChangeEndedAsync(this.state.sliderValue + 1)
                 }
                 else {
                     this.changeSlider(0)
+                    this.onSliderChangeEndedAsync(0)
                 }
-            }, 600);
+            }, 4000);
         }
         else if (this.animateTimeout) {
+            this.state.loadState === 'loaded' && this.setInteractive(true)
             clearInterval(this.animateTimeout);
         }
 
@@ -114,15 +110,20 @@ class MapBox extends Component {
     changeSlider(value) {
         let dayNum = parseInt(value)
         let newDate = addDays(this.state.initialDate, dayNum)
-        
-        this.state.map.setFilter('covid-heatmap', ['<=', ['number', ['get', 'timestamp']], newDate.getTime()])
-        this.state.map.setFilter('covid-heatmap-death', ['<=', ['number', ['get', 'timestamp']], newDate.getTime()])
-        this.state.map.setFilter('covid-point', ['==', ['number', ['get', 'timestamp']], newDate.getTime()])
 
         this.setState({
             sliderValue: dayNum,
             date: newDate,
         })
+    }
+
+    onSliderChangeEndedAsync = async (value) => {
+        let date = addDays(this.state.initialDate, parseInt(value))
+        this.state.map.setFilter('covid-heatmap', ['<=', ['number', ['get', 'timestamp']], date.getTime()])
+        this.state.map.setFilter('covid-heatmap-death', ['<=', ['number', ['get', 'timestamp']], date.getTime()])
+        this.state.map.setFilter('covid-point', ['==', ['number', ['get', 'timestamp']], date.getTime()])
+        this.updateVisibleCities()
+        this.props.onSelectedDateChanged && this.props.onSelectedDateChanged(date)
     }
 
     handleMapTypeChange(event) {
@@ -144,46 +145,43 @@ class MapBox extends Component {
         }
     }
 
-    handleAnimateChange(event) {
+    handleAnimateChange = (event) => {
         this.setState({ animate: event.target.checked }, () => {
             this.animatedStep()
         })
     }
 
     render() {
-
-        const daysAgoStringMaker = () => {
+        const daysAgo = () => {
             let daysAgo = daysBetween(this.state.date, new Date())
             if (daysAgo === 0) {
-                return '(hoje)'
+                return <span>(hoje)</span>
             }
             if (daysAgo === 1) {
-                return '(ontem)'
+                return (<span>(ontem)</span>)
             }
             else {
-                return `(há ${daysAgo} dias)`
+                return (<span>(há <strong>{daysAgo}</strong> dias)</span>)
             }
         }
-
 
         return (
             <div style={this.props.containerStyle}>
                 <div className='console'>
-                    <h1 className='consoleTitle'>COVID-19 no Brasil até o dia {formatDate(this.state.date)} {daysAgoStringMaker()}</h1>
-                    <p>Fonte de dados: <a href='https://covid19br.wcota.me/'>Número de casos confirmados de COVID-19 no Brasil</a></p>
+                    <h1 className='consoleTitle'>Mapa de calor: COVID-19 no Brasil</h1>
                     <div className='session sliderbar'>
-                        <strong>{formatDate(this.state.date)}: <label className='active-hour'>{this.state.hour}</label></strong>
+                        <label>
+                            <span style={{fontSize: '1.1em'}}> Até o dia <strong>{formatDate(this.state.date)}</strong> {daysAgo()}</span>
+                            <input className='slider row' type='range' min='0' max={this.state.maxDays} step='1' value={this.state.sliderValue} 
+                            onChange={(e) => this.changeSlider(e.target.value)} 
+                            onMouseUp={(e)=>this.onSliderChangeEndedAsync(e.target.value)}/>
+                        </label>
                         <form>
                             <label>
-                                <input name="animate" type="checkbox" checked={this.state.animate}
-                                    onChange={(e) => this.handleAnimateChange(e)}
-                                />
+                                <input name="animate" type="checkbox" checked={this.state.animate} onChange={this.handleAnimateChange} />
                                 Animar
-                            </label>
+                        </label>
                         </form>
-                        <input className='slider row' type='range' min='0' max={this.state.maxDays} step='1' value={this.state.sliderValue}
-                            onChange={(e) => this.changeSlider(e.target.value)}
-                        />
                     </div>
                     <form>
                         <label>
@@ -224,10 +222,36 @@ class MapBox extends Component {
                         </p>
                     </div>
                 </div>
+                {/*<div style={{position: 'absolute', top: 10, right:10, zIndex: 999}}>
+                    <Lock title='lock' textOnLocked="locked" textOnUnlocked='unlocked' locked={this.state.isMapInteractive}/>
+                </div>*/}
                 <div style={this.props.style} ref={el => this.mapContainer = el} />
-
             </div>
         )
+    }
+
+    setInteractive(isInteractive, mapObj) {
+        let map = mapObj || this.state.map
+        if (isInteractive) {
+            map.boxZoom.enable();
+            map.scrollZoom.enable();
+            map.dragPan.enable();
+            map.dragRotate.enable();
+            map.keyboard.enable();
+            map.doubleClickZoom.enable();
+            map.touchZoomRotate.enable();
+        } else {
+            map.boxZoom.disable();
+            map.scrollZoom.disable();
+            map.dragPan.disable();
+            map.dragRotate.disable();
+            map.keyboard.disable();
+            map.doubleClickZoom.disable();
+            map.touchZoomRotate.disable();
+        }
+        this.setState({
+            isMapInteractive: isInteractive
+        })
     }
 
     componentDidMount() {
@@ -242,12 +266,13 @@ class MapBox extends Component {
             maxPitch: 0,
             pitchWithRotate: false,
             logoPosition: 'bottom-right',
-
         })
 
         this.setState({
             map: map
         })
+
+        this.setInteractive(false, map)
 
         map.on('move', () => {
             this.setState({
@@ -294,13 +319,16 @@ class MapBox extends Component {
                     'heatmap-color': [
                         'interpolate', ['linear'], ['heatmap-density'],
                         0, 'rgba(255,237,68,0)',
-                        0.1, '#ff9671',
-                        0.15, '#ffc75f',
-                        0.2, '#e24f4f',
-                        0.4, '#c02f36',
-                        0.6, '#9e001f',
-                        0.8, '#7d0006',
-                        1, '#5e0000'
+                        0.1, '#E75151',
+                        0.2, '#D34848',
+                        0.3, '#BF3F3F',
+                        0.4, '#972D2D',
+                        0.5, '#9e001f',
+                        0.6, '#832424',
+                        0.7, '#6F1B1B',
+                        0.8, '#5B1212',
+                        0.9, '#470909',
+                        1, '#330000',
                     ],
                     // Adjust the heatmap radius by zoom level
                     'heatmap-radius': [
@@ -333,8 +361,17 @@ class MapBox extends Component {
                     // to create a blur-like effect.
                     'heatmap-color': [
                         'interpolate', ['linear'], ['heatmap-density'],
-                        0, 'rgba(255,237,68,0)', 0.05, 'rgb(72,244,66)', 0.15, 'rgb(68,102,237)',
-                        0.4, 'rgb(249,169,0)', 0.6, 'rgb(255,52,45)', 0.8, 'rgb(233,3,8)', 1, 'rgb(199,5,9)'
+                        0, 'rgba(0,0,0,0)',
+                        0.1, '#007083',
+                        0.2, '#009a94',
+                        0.3, '#00c385',
+                        0.4, '#fdfd25',
+                        0.5, '#fdd525',
+                        0.6, '#fd9f25',
+                        0.7, '#fd6625',
+                        0.8, '#e6441c',
+                        0.9, '#E34519',
+                        1, '#c9240e'
                     ],
                     // Adjust the heatmap radius by zoom level
                     'heatmap-radius': [
@@ -397,6 +434,7 @@ class MapBox extends Component {
                 this.setState({
                     loadState: 'loaded'
                 })
+                this.setInteractive(true, map)
                 this.updateVisibleCities()
             }
         })

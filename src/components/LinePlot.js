@@ -33,7 +33,7 @@ const showSometimes = showEvery(3)
 const LinePLot = ({ data, colors = { scheme: 'set3' }, stacked = false }) => {
     return (<ResponsiveLine
         data={data}
-        margin={{ top: 50, right: 60, bottom: 100, left: 60 }}
+        margin={{ top: 50, right: 120, bottom: 100, left: 90 }}
         tooltip={(node) => {
             let last = undefined
             let lasty = 0
@@ -61,6 +61,7 @@ const LinePLot = ({ data, colors = { scheme: 'set3' }, stacked = false }) => {
                 }}>
                     <strong style={{ fontSize: '.9em' }}>{node.point.data.xFormatted}</strong><br />
                     <span>{node.point.serieId}: <strong>{node.point.data.yFormatted}</strong>
+                    <br/>
                     <span> ({lastDiffStr})</span>
                     </span>
                 </div>
