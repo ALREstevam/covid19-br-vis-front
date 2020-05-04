@@ -1,86 +1,98 @@
-export const perDate2NivoDataset = (visibleCitiesPerDate) => {
-    let data = Object.keys(visibleCitiesPerDate)
-        .sort((a, b) => (new Date(a)) - (new Date(b)))
-        .map(key => visibleCitiesPerDate[key].reduce(
-            (sum, city) => {
+export class PerDateNivoDataset {
+
+    constructDataset = (visibleCitiesPerDate, untilDate) => {
+
+        let data = Object.keys(visibleCitiesPerDate)
+            .filter(dt => (untilDate.setHours(0,0,0,0) > (new Date(dt).setHours(0,0,0,0))) )
+            .sort((a, b) => (new Date(a)) - (new Date(b)))
+            .map(key => visibleCitiesPerDate[key]
+                .reduce(
+                (sum, city) => {
+                    return {
+                        date: key,
+                        deaths: sum.deaths + city.deaths,
+                        newCases: sum.newCases + city.newCases,
+                        newDeaths: sum.newDeaths + city.newDeaths,
+                        totalCases: sum.totalCases + city.totalCases,
+                    }
+                }, {
+                    date: undefined,
+                    deaths: 0,
+                    newCases: 0,
+                    newDeaths: 0,
+                    totalCases: 0,
+                })
+            )
+
+        let cases = {
+            "id": "Casos",
+            "color": "#61cdbb",
+            "data": data.map(day => {
                 return {
-                    date: key,
-                    deaths: sum.deaths + city.deaths,
-                    newCases: sum.newCases + city.newCases,
-                    newDeaths: sum.newDeaths + city.newDeaths,
-                    totalCases: sum.totalCases + city.totalCases,
+                    x: day.date,
+                    y: day.totalCases,
                 }
-            }, {
-            date: undefined,
-            deaths: 0,
-            newCases: 0,
-            newDeaths: 0,
-            totalCases: 0,
-        }))
-
-    let cases = {
-        "id": "Casos",
-        "color": "#61cdbb",
-        "data": data.map(day => {
-            return {
-                x: day.date,
-                y: day.totalCases,
-            }
-        })
-    }
-
-    let deaths = {
-        "id": "Óbitos",
-        "color": "#f47560",
-        "data": data.map(day => {
-            return {
-                x: day.date,
-                y: day.deaths,
-            }
-        })
-    }
-
-    function yGrowthFactor(array) {
-        let growthFactor = []
-        let pair = [/*yesterday, today*/]
-
-        for (let el of array) {
-            pair.push(el)
-            if (pair.length === 2) {
-                let y = pair[0].y === 0 ? 1 : pair[1].y / pair[0].y
-
-                    growthFactor.push(
-                        {
-                            x: el.x,
-                            y: y,
-                        }
-                    )
-                pair = [el] //today becomes yesterday
-            }
+            })
         }
-        return growthFactor
+
+        let deaths = {
+            "id": "Óbitos",
+            "color": "#f47560",
+            "data": data.map(day => {
+                return {
+                    x: day.date,
+                    y: day.deaths,
+                }
+            })
+        }
+
+        function yGrowthFactor(array) {
+            let growthFactor = []
+            let pair = [ /*yesterday, today*/ ]
+
+            for (let el of array) {
+                pair.push(el)
+                if (pair.length === 2) {
+                    let y = pair[0].y === 0 ? 1 : pair[1].y / pair[0].y
+
+                    growthFactor.push({
+                        x: el.x,
+                        y: y,
+                    })
+                    pair = [el] //today becomes yesterday
+                }
+            }
+            return growthFactor
+        }
+
+
+        let casesGrowthFactor = {
+            "id": "GR casos",
+            "color": "#f47560",
+            "data": yGrowthFactor(cases.data)
+        }
+
+        let deathGrowthFactor = {
+            "id": "GR óbitos",
+            "color": "#f47560",
+            "data": yGrowthFactor(deaths.data)
+        }
+
+        return {
+            deaths: deaths,
+            cases: cases,
+            casesGrowthFactor: casesGrowthFactor,
+            deathGrowthFactor: deathGrowthFactor,
+        }
     }
 
 
-    let casesGrowthFactor = {
-        "id": "Fator de crescimento - casos",
-        "color": "#f47560",
-        "data": yGrowthFactor(cases.data)
-    }
-
-    let deathGrowthFactor = {
-        "id": "Fator de crescimento - óbitos",
-        "color": "#f47560",
-        "data": yGrowthFactor(deaths.data)
-    }
-
-    return {
-        deaths: deaths,
-        cases: cases,
-        casesGrowthFactor: casesGrowthFactor,
-        deathGrowthFactor: deathGrowthFactor,
-    }
 }
+
+
+
+
+
 
 export const perDate2NivoChartTitle = (visibleCitiesPerDate, defaultTitle) => {
 
@@ -104,20 +116,17 @@ export const perDate2NivoChartTitle = (visibleCitiesPerDate, defaultTitle) => {
         }
         if (states.length - 3 === 1) {
             return 'parte de ' + showStates.join(', ') + ' e outro estado'
-        }
-        else {
+        } else {
             if (showStates.length === 3) {
                 return showStates.join(', ')
             }
             if (showStates.length === 2) {
                 return showStates.join(' e ')
-            }
-            else {
+            } else {
                 return showStates[0]
             }
         }
-    }
-    else {
+    } else {
         let cities = data.map(city => city.city).filter(city => city !== 'CASO SEM LOCALIZAÇÃO DEFINIDA')
         let showCities = cities.slice(0, 3)
 
@@ -126,15 +135,13 @@ export const perDate2NivoChartTitle = (visibleCitiesPerDate, defaultTitle) => {
         }
         if (cities.length - 3 === 1) {
             return showCities.join(', ') + ' e outra cidade'
-        }
-        else {
+        } else {
             if (showCities.length === 3) {
                 return showCities.join(', ')
             }
             if (showCities.length === 2) {
                 return showCities.join(' e ')
-            }
-            else {
+            } else {
                 return showCities[0]
             }
         }
