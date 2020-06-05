@@ -5,7 +5,8 @@ import { formatDate, daysBetween, addDays } from '../common/date'
 import CityDataItem from './CityDataItem'
 import env from '../env/envVars'
 //import Lock from './Lock'
-import {NotificationManager} from 'react-notifications';
+import { NotificationManager } from 'react-notifications';
+import LoadingOpacity from '../components/LoadingOpacity'
 
 mapboxgl.accessToken = env.MAPBOX_ACCESS_TOKEN
 
@@ -27,26 +28,34 @@ class MapBox extends Component {
             date: new Date(),
             sliderValue: daysBetween(new Date('2020-02-25'), new Date()),
             data: this.props.data,
-            visibleCities: [],
-            renderableCities: [],
+            listableCities: [],
             animate: false,
             initialDate: initialDate,
             maxDays: daysBetween(initialDate, new Date()),
             mapType: 'infected',
             loadState: 'loading',
-            isMapInteractive: true,
+            isMapInteractive: false,
+            loadingText: 'Carregando mapa do Brasil...',
+            featuresLength: undefined,
         };
     }
 
-
     renderCityListItem = (index, key) => {
-        const data = this.state.renderableCities[index]
-        return <CityDataItem name={data.city} state={data.state} date={new Date(data.date)} 
-        cases={data.totalCases} deaths={data.deaths} key={key}/>
+        const data = this.state.listableCities[index]
+        return <CityDataItem name={data.city} state={data.state} date={new Date(data.date)}
+            cases={data.totalCases} deaths={data.deaths} key={key} />
     }
 
-    getVisibleOnMap() {
-        let features = this.state.map.queryRenderedFeatures({ layers: ['all-cities'] });
+    getHeatmapFeatures() {
+        return this.state.map.queryRenderedFeatures({ layers: ['all-cities'] })
+    }
+
+    processVisibleCities(features) {
+
+        if (!features || features.length === 0) {
+            return [[], {}]
+        }
+
         let cityData = {}
         let perDate = {}
         if (features) {
@@ -61,29 +70,62 @@ class MapBox extends Component {
             }
             return [Object.keys(cityData).map(key => cityData[key]), perDate];
         }
-        return [[], []]
+        return [[], {}]
     }
 
-    updateVisibleCities() {
-        let cityData, perDate
-        [cityData, perDate] = this.getVisibleOnMap()
+    updateVisibleCities(force=false) {
+        this.setInteractive(false, this.state.map, () => {
 
-        this.setState({
-            visibleCities: cityData,
-            visibleCitiesPerDate: perDate,
-            renderableCities: cityData.sort((a, b) => a.totalCases - b.totalCases).reverse()
+            setTimeout(()=>{
+                this.setState({
+                    loadingText: 'Obtendo cidades visíveis...'
+                })
+    
+                let cityData, perDate, listable
+                let features = this.getHeatmapFeatures()
+
+                if ( 
+                    force ||
+                    features.length < 50 ||
+                    this.state.featuresLength !== features.length ||
+                    this.state.animate
+                    ) {
+
+                    this.setState({
+                        loadingText: 'Gerando dados para a lista de cidades e gráficos...',
+                        featuresLength: features.length
+                    })
+                    
+                    const processed = this.processVisibleCities(features)
+                    cityData = processed[0]
+                    perDate = processed[1]
+
+                    listable = cityData.sort((a, b) => a.totalCases - b.totalCases).reverse()
+    
+                    this.setState({listableCities: listable})
+
+                    this.props.onVisibleCitiesChange &&
+                        this.props.onVisibleCitiesChange(cityData, perDate)
+
+                    if(!this.state.animate) setTimeout(() => {
+                        this.setInteractive(true, this.state.map)
+                    }, 30)
+                }
+                else {
+                    if(!this.state.animate) setTimeout(() => {
+                        this.setInteractive(true, this.state.map)
+                    }, 30)
+                }
+            }, 20)
+            
         })
-
-        this.props.onVisibleCitiesChange &&
-            this.state.loadState === 'loaded' &&
-            this.props.onVisibleCitiesChange(cityData, perDate)
     }
 
     animatedStep() {
         if (this.state.animate) {
             this.setInteractive(false)
             NotificationManager.info("A interação com o mapa será desetivada enquanto a animação ocorrer.", "Animação ativada")
-            
+
             if (this.state.sliderValue >= this.state.maxDays) {
                 this.changeSlider(0)
                 this.onSliderChangeEndedAsync(0)
@@ -102,18 +144,15 @@ class MapBox extends Component {
         }
         else if (this.animateTimeout) {
             this.state.loadState === 'loaded' && this.setInteractive(true)
-            clearInterval(this.animateTimeout);
+            clearInterval(this.animateTimeout)
         }
-
     }
 
     changeSlider(value) {
-        let dayNum = parseInt(value)
-        let newDate = addDays(this.state.initialDate, dayNum)
-
+        let sliderValue = parseInt(value)
         this.setState({
-            sliderValue: dayNum,
-            date: newDate,
+            sliderValue: sliderValue,
+            date: addDays(this.state.initialDate, sliderValue),
         })
     }
 
@@ -127,9 +166,7 @@ class MapBox extends Component {
     }
 
     handleMapTypeChange(event) {
-        this.setState({
-            mapType: event.target.value
-        })
+        this.setState({ mapType: event.target.value })
 
         let layers = {
             death: 'covid-heatmap-death',
@@ -154,35 +191,33 @@ class MapBox extends Component {
     render() {
         const daysAgo = () => {
             let daysAgo = daysBetween(this.state.date, new Date())
-            if (daysAgo === 0) {
-                return <span>(hoje)</span>
-            }
-            if (daysAgo === 1) {
-                return (<span>(ontem)</span>)
-            }
-            else {
-                return (<span>(há <strong>{daysAgo}</strong> dias)</span>)
-            }
+            if (daysAgo === 0) return <span>(hoje)</span>
+            if (daysAgo === 1) return (<span>(ontem)</span>)
+            else return (<span>(há <strong>{daysAgo}</strong> dias)</span>)
         }
 
         return (
             <div style={this.props.containerStyle}>
+                <LoadingOpacity
+                    loading={!this.state.isMapInteractive && !this.state.animate}
+                    style={this.props.style}
+                    text={this.state.loadingText}
+                />
+
                 <div className='console'>
                     <h1 className='consoleTitle'>Mapa de calor: COVID-19 no Brasil</h1>
-                    <div className='session sliderbar'>
+                    <label>
+                        <span style={{ fontSize: '1.1em' }}> Até o dia <strong>{formatDate(this.state.date)}</strong> {daysAgo()}</span>
+                        <input className='slider row' type='range' min='0' max={this.state.maxDays} step='1' value={this.state.sliderValue}
+                            onChange={(e) => this.changeSlider(e.target.value)}
+                            onMouseUp={(e) => this.onSliderChangeEndedAsync(e.target.value)} />
+                    </label>
+                    <form>
                         <label>
-                            <span style={{fontSize: '1.1em'}}> Até o dia <strong>{formatDate(this.state.date)}</strong> {daysAgo()}</span>
-                            <input className='slider row' type='range' min='0' max={this.state.maxDays} step='1' value={this.state.sliderValue} 
-                            onChange={(e) => this.changeSlider(e.target.value)} 
-                            onMouseUp={(e)=>this.onSliderChangeEndedAsync(e.target.value)}/>
+                            <input name="animate" type="checkbox" checked={this.state.animate} onChange={this.handleAnimateChange} />
+                            Animar
                         </label>
-                        <form>
-                            <label>
-                                <input name="animate" type="checkbox" checked={this.state.animate} onChange={this.handleAnimateChange} />
-                                Animar
-                        </label>
-                        </form>
-                    </div>
+                    </form>
                     <form>
                         <label>
                             <input type="radio" value="infected" checked={this.state.mapType === 'infected'}
@@ -199,58 +234,51 @@ class MapBox extends Component {
                     <div>
 
                     </div>
-                    <div>
-                        <div className='cityList'>
-                            {(this.state.renderableCities.length > 0) ? (<ReactList
-                                itemRenderer={/*::*/this.renderCityListItem}
-                                length={this.state.renderableCities.length}
-                                type='uniform'
-                                pageSize={3}
-                            />)
-                                :
-                                (<p style={{ textAlign: 'center', fontStyle: 'italic' }}>
-                                    (Use o zoom e a navegação pelo mapa para ver os detalhes de cada localidade.)</p>)}
-                        </div>
+                    <div className='cityList'>
+                        {(this.state.listableCities.length > 0) ? (<ReactList
+                            itemRenderer={/*::*/this.renderCityListItem}
+                            length={this.state.listableCities.length}
+                            type='uniform'
+                            pageSize={3}
+                        />)
+                            :
+                            (<p style={{ textAlign: 'center', fontStyle: 'italic' }}>
+                                (Use o zoom e a navegação pelo mapa para ver os detalhes de cada localidade.)</p>)}
                     </div>
                     <div style={{ color: 'gray', fontSize: '0.5em', bottom: 0, position: 'absolute' }}>
                         <p>
                             <span><strong>Zoom: </strong>{this.state.zoom}</span>
                             <span> | </span>
                             <span><strong>Centro: </strong>{this.state.lat}, {this.state.lng}</span>
-                            <span> | </span>
-                            <span><strong>Cidades visíveis: </strong>{this.state.visibleCities.length}</span>
                         </p>
                     </div>
                 </div>
-                {/*<div style={{position: 'absolute', top: 10, right:10, zIndex: 999}}>
-                    <Lock title='lock' textOnLocked="locked" textOnUnlocked='unlocked' locked={this.state.isMapInteractive}/>
-                </div>*/}
+
                 <div style={this.props.style} ref={el => this.mapContainer = el} />
+
+
             </div>
         )
     }
 
-    setInteractive(isInteractive, mapObj) {
+    setInteractive = (isInteractive, mapObj, onSetFinished = undefined) => {
         let map = mapObj || this.state.map
-        if (isInteractive) {
-            map.boxZoom.enable();
-            map.scrollZoom.enable();
-            map.dragPan.enable();
-            map.dragRotate.enable();
-            map.keyboard.enable();
-            map.doubleClickZoom.enable();
-            map.touchZoomRotate.enable();
-        } else {
-            map.boxZoom.disable();
-            map.scrollZoom.disable();
-            map.dragPan.disable();
-            map.dragRotate.disable();
-            map.keyboard.disable();
-            map.doubleClickZoom.disable();
-            map.touchZoomRotate.disable();
+        const properties = ['boxZoom', 'scrollZoom', 'dragPan', 'dragRotate',
+            'keyboard', 'doubleClickZoom', 'touchZoomRotate']
+
+        const enable = () => {
+            properties.forEach((prop) => { map[prop].enable() })
         }
+
+        const disable = () => {
+            properties.forEach((prop) => { map[prop].disable() })
+        }
+
         this.setState({
-            isMapInteractive: isInteractive
+            isMapInteractive: isInteractive,
+        }, () => {
+            isInteractive ? enable() : disable()
+            onSetFinished && onSetFinished()
         })
     }
 
@@ -268,10 +296,7 @@ class MapBox extends Component {
             logoPosition: 'bottom-right',
         })
 
-        this.setState({
-            map: map
-        })
-
+        this.setState({ map: map })
         this.setInteractive(false, map)
 
         map.on('move', () => {
@@ -282,7 +307,44 @@ class MapBox extends Component {
             });
         });
 
+        map.once('idle', () => {
+            this.onSourceLoadFinished && !this.state.animate && this.onSourceLoadFinished()
+            if (this.state.loadState === 'loading') {
+                this.setState({
+                    loadState: 'loaded'
+                }, ()=>{
+                    this.updateVisibleCities()
+                })
+            }
+        })
+
+        map.on('moveend', () => {
+            this.setInteractive(false, map, () => { this.updateVisibleCities() })
+        })
+
+        /*
+        map.on('dragend', () => {
+            this.setInteractive(false, map, () => {  })
+            this.updateVisibleCities()
+        })
+        */
+
+        /*map.on('idle', () => {
+        })*/
+
+        map.on('zoomend', () => {
+            this.setInteractive(false, map, () => { this.updateVisibleCities() })
+        })
+
+        map.on('touchend', () => {
+            this.setInteractive(false, map, () => { this.updateVisibleCities() })
+        })
+
         map.on('load', () => {
+
+            this.setState({
+                loadingText: 'Baixando dados das cidades e construindo mapa...'
+            })
 
             map.addSource('covid', {
                 'type': 'geojson',
@@ -293,10 +355,6 @@ class MapBox extends Component {
                 'type': 'geojson',
                 'data': `${this.baseUrl}/api/v1/br/cities-daily.geojson`
             })
-
-            map.on('moveend', () => {
-                this.updateVisibleCities()
-            });
 
             map.addLayer({
                 'id': 'covid-heatmap-death',
@@ -385,7 +443,6 @@ class MapBox extends Component {
                 'waterway-label'
             );
 
-
             map.addLayer({
                 'id': 'covid-point',
                 'type': 'circle',
@@ -427,17 +484,7 @@ class MapBox extends Component {
 
         });
 
-        map.on('idle', () => {
-            this.onSourceLoadFinished && !this.state.animate && this.onSourceLoadFinished()
 
-            if (this.state.loadState === 'loading') {
-                this.setState({
-                    loadState: 'loaded'
-                })
-                this.setInteractive(true, map)
-                this.updateVisibleCities()
-            }
-        })
     }
 }
 

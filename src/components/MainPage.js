@@ -5,60 +5,87 @@ import MapBox from './MapBox'
 import LoadingBar from 'react-top-loading-bar';
 import Footer from './Footer'
 import LinePlot from './LinePlot'
-import { PerDateNivoDataset, perDate2NivoChartTitle } from '../common/toNivoDataConverter'
+import BarPlot from './BarPlot'
+import MapDataExtractor from '../common/MapDataExtractor'
+import texts from '../texts/texts'
+
+//import WebWorker from '../worker/WebWorkerSetup'
+//import visibleCitiesWorker from '../worker/visibleCitiesWorker'
+
+
+const currentScrollPosition = () => {
+    return (window.pageYOffset || document.documentElement.scrollTop)
+}
+
+const scrollTo = (pos) => {
+    document.documentElement.scrollTop = document.body.scrollTop = pos
+}
+
+const scrollOffset = (offset) => {
+    scrollTo(currentScrollPosition() + offset)
+}
 
 
 const ScrollButtons = () => (
     <div className='scrollButtons'>
-        <div className='scrollButton' onClick={()=>{
-            document.documentElement.scrollTop = document.body.scrollTop = ((window.pageYOffset || document.documentElement.scrollTop)-500);
-        }}><span>˄</span></div>
-        <div className='scrollButton' onClick={()=>{
-            document.documentElement.scrollTop = document.body.scrollTop = ((window.pageYOffset || document.documentElement.scrollTop)+500);
-        }}><span>˅</span></div>
+        <div className='scrollButton' onClick={() => { scrollOffset(-500) }}><span>{texts.specialChars.pointUp}</span></div>
+        <div className='scrollButton' onClick={() => { scrollOffset(500) }}><span>{texts.specialChars.pointDown}</span></div>
     </div>
 )
 
-const GrowthFactorMessage = () => (
+const LinePlotWrapper = ({ title, data, colors,
+    stacked = true, className = 'almostFullPage',
+    yScaleType = 'linear' }) => {
 
-    <div className='nivoCharts'>
-        <h3>Fator de crescimento</h3>
-        <p>
-            O <strong>Fator de Crescimento</strong> (ou <em>Growth Factor</em>) é calculado pela divisão <code>ValorDia/ValorDiaAnterior</code> e reflete
-            o crescimento diário no número de casos e óbitos computados:
-                        </p>
+    if (data === undefined) {
+        console.error('LinePlotWrapper received undefined as data to plot', title)
+        return (undefined)
+    }
 
-        <ul>
-            <li><code>Fator de Crescimento<strong> &gt; </strong>0</code>: o valor referido aumentou desde o último dia</li>
-            <li><code>Fator de Crescimento<strong> &lt; </strong>0</code>: o valor referido diminuiu desde o último dia</li>
-            <li><code>Fator de Crescimento<strong> ≈ </strong>0</code>: o valor referido não mudou significativamente desde o último dia</li>
-        </ul>
+    return (
+        <div>
+            <h3>{title}</h3>
+            <div className={className}>
+                <LinePlot data={data}
+                    colors={colors}
+                    stacked={stacked}
+                    yScaleType={yScaleType} />
+            </div>
+        </div>
+    )
+}
 
-        <p>
-            O fator de crescimento é uma importante métrica na avaliação da disseminação da doença e ocorrência de mortes, mas
-            é totalmente dependente da testagem em massa da população e da confirmação da causa dos óbitos onde há suspeita de COVID-19,
-            assim, um aumento ou diminuição neste fator pode ocorrer caso a quantidade de testes realizados mude e não somente
-            se a quantidade de pessoas infectadas ou óbitos confirmados se alterar.
-                    </p>
-    </div>
-)
+const BarPlotWrapper = ({title, data, className}) => {
+    return (
+        <div>
+            <h3>{title}</h3>
+            <div className={className}>
+                <BarPlot data={data} />
+            </div>
+        </div>
+        
+    )
+}
+
+
 
 class MainPage extends Component {
-
     constructor(props) {
         super(props)
-        this.nivoDataset = new PerDateNivoDataset()
+
         this.timers = []
+        this.plotData = new MapDataExtractor()
+        this.plotData.makeDataset({}, new Date())
 
         this.state = {
             covidCasesGeoJson: undefined,
             covidCasesJson: undefined,
             loadingBarProgress: 0,
-            visibleCities: [],
+            //visibleCities: [],
             visibleCitiesPerDate: {},
             selectedDate: new Date(),
-            perDayChartData: this.nivoDataset.constructDataset({}, new Date()),
-            perDateChartName: 'COVID-19 em todo o Brasil'
+            perDayChartData: this.plotData.generateChartData(),
+            perDateChartName: 'COVID-19 em todo o Brasil...'
         }
     }
 
@@ -81,7 +108,7 @@ class MainPage extends Component {
 
     onMapLoadedHandler = () => {
         this.complete()
-        this.updatePlots()
+        //this.worker.postMessage('SOMETHING');
     }
 
     onLoaderFinished = () => {
@@ -98,29 +125,32 @@ class MainPage extends Component {
                 this.setState({
                     loadingBarProgress: this.state.loadingBarProgress + Math.round(Math.random() * 5)
                 })
-            },
-            1200
-        ))
-
+            }, 1200)
+        )
     }
 
-    visibleCitiesChangeHandler = async (visibleCities, visibleCitiesPerDate) => {
+    updatePlots = (visibleCities, visibleCitiesPerDate) => {
+        this.plotData.makeDataset(visibleCitiesPerDate, this.state.selectedDate)
+
         this.setState({
-            visibleCities: visibleCities,
+            //visibleCities: visibleCities,
             visibleCitiesPerDate: visibleCitiesPerDate,
-        })
-        this.updatePlots()
-    }
-
-    updatePlots = async () => {
-        this.setState({
-            perDayChartData: this.nivoDataset.constructDataset(this.state.visibleCitiesPerDate, this.state.selectedDate),
-            perDateChartName: 'COVID-19 em ' + perDate2NivoChartTitle(this.state.visibleCitiesPerDate, "todo o Brasil")
+            perDayChartData: this.plotData.generateChartData(),
+            perDateChartName: this.plotData.makeTitle()
         })
     }
 
     selectedDateChangedHandler = (date) => {
-        this.setState({ selectedDate: date })
+        this.plotData.makeDataset(this.state.visibleCitiesPerDate, date)
+        this.setState({
+            selectedDate: date,
+            perDayChartData: this.plotData.generateChartData(),
+            perDateChartName: this.plotData.makeTitle()
+        })
+    }
+
+    onMapUpdatingHandler = (isLoading) => {
+        this.setState({ loading: isLoading })
     }
 
     render() {
@@ -132,48 +162,87 @@ class MainPage extends Component {
                     color='red'
                     onLoaderFinished={this.onLoaderFinished}
                 />
-                <ScrollButtons/>
-                
-                <MapBox style={{ right: 0, left: 0, height: '95vh', width: '100%' }}
+                <ScrollButtons />
+
+                <MapBox style={{ right: 0, left: 0, height: '95vh', width: '100%', maxHeight: '1000px' }}
                     data={this.state.covidCasesGeoJson}
                     zoom={3} lat={-13.5958} lng={-54.4587}
                     onSourceLoadBegin={this.infiniteLoad}
                     onSourceLoadFinished={this.onMapLoadedHandler}
-                    onVisibleCitiesChange={this.visibleCitiesChangeHandler}
+                    onVisibleCitiesChange={this.updatePlots}
                     onSelectedDateChanged={this.selectedDateChangedHandler}
                 />
+
                 <div className='nivoCharts'>
                     <h2>{this.state.perDateChartName}</h2>
-                    <h3>Casos e óbitos</h3>
-                    <div style={{ width: '100%', height: '80vh' }}>
-                        <LinePlot
-                            data={[this.state.perDayChartData.deaths, this.state.perDayChartData.cases]}
-                            colors={['#fa4343', '#0068d2']} 
-                            stacked={true}/>
-                    </div>
-                    <h3>Óbitos</h3>
-                    <div style={{ width: '100%', height: '50vh', }}>
-                        <LinePlot data={[this.state.perDayChartData.deaths]} 
-                            colors={['#fa4343']} />
-                    </div>
 
-                    <GrowthFactorMessage />
+                    {texts.aboutSite.presentation}
+                    {texts.aboutSite.youCanDo}
 
-                    <div style={{ width: '100%', height: '80vh', }}>
-                        <LinePlot data={[this.state.perDayChartData.casesGrowthFactor]}
-                        colors={['#00d3eb']}/>
-                    </div>
-                    <div style={{ width: '100%', height: '80vh', }}>
-                        <LinePlot data={[this.state.perDayChartData.deathGrowthFactor]} 
-                        colors={['#ff6a7f']}/>
-                    </div>
-                    {/*<div style={{ width: '100%', height: '100vh', backgroundColor: 'red' }}>
-                    <MyResponsiveLine />
-                </div>*/}
+                    <LinePlotWrapper title='Casos e óbitos'
+                        data={[this.state.perDayChartData.deaths, this.state.perDayChartData.cases]}
+                        colors={['#fa4343', '#0068d2']}
+                        stacked={true} />
+
+                    <LinePlotWrapper title='Óbitos' data={[this.state.perDayChartData.deaths]}
+                        colors={['#fa4343']}
+                    />
+
+                    <LinePlotWrapper title='Casos e óbitos em escala logarítmica'
+                        data={[this.plotData.removeZeroes(this.state.perDayChartData.deaths),
+                        this.plotData.removeZeroes(this.state.perDayChartData.cases)]}
+                        colors={['#fa4343', '#0068d2']}
+                        stacked={true}
+                        yScaleType='log10' />
+
+                    <LinePlotWrapper
+                        title='Casos sobre óbitos'
+                        data={[this.state.perDayChartData.deathsOverCases]}
+                        colors={['#e8a838']}
+                    />
+
+                    {/*<BarPlotWrapper
+                            title='Totais'
+                            data={this.state.perDayChartData.casesDeathsPerLocation.perState}
+                    />*/}
+
+                    <h2>Novos casos e óbitos</h2>
+
+                    <LinePlotWrapper
+                        title='Novos casos por dia'
+                        data={[this.state.perDayChartData.newCases]}
+                        colors={['#3841e8']}
+                    />
+
+                    <LinePlotWrapper
+                        title='Novos óbitos por dia'
+                        data={[this.state.perDayChartData.newDeaths]}
+                        colors={['#e85e38']}
+                    />
+
+                    <h2>Fator de crescimento</h2>
+
+                    {texts.growthFactor.mainExplanation}
+                    {texts.growthFactor.parameters}
+                    {texts.growthFactor.about}
+
+                    <LinePlotWrapper title='Fator de crescimento - casos' data={[this.plotData.casesGrowthFactorPlotData]}
+                        colors={['#00d3eb']}
+                    />
+
+                    <LinePlotWrapper title='Fator de crescimento - óbitos' data={[this.plotData.deathsGrowthRateData]}
+                        colors={['#ff6a7f']}
+                    />
+
+                    <LinePlotWrapper title='Fator de crescimento - casos e óbitos' data={[this.plotData.deathsGrowthRateData, this.plotData.casesGrowthFactorPlotData]}
+                        colors={['#ff6a7f', '#00d3eb']}
+                        yScaleType='linearMinusOnePlusOne'
+                    />
+
                 </div>
-                <div style={{marginLeft: 50, marginRight: 50}}>
-                    <hr/>
-                    <p>Fonte de dados para o mapa e os gráficos: <a href='https://covid19br.wcota.me/'>Número de casos confirmados de COVID-19 no Brasil</a></p>
+                <div style={{ marginLeft: 50, marginRight: 50 }}>
+                    <hr />
+                    {texts.dataSource.mainText}
                 </div>
                 <Footer />
             </div>
@@ -181,6 +250,12 @@ class MainPage extends Component {
     }
 
     componentDidMount() {
+        //this.worker = new WebWorker(visibleCitiesWorker)
+
+        /*this.worker.addEventListener('message', function(e) {
+            console.log('Message from Worker: ' + e.data)
+        })*/
+
     }
 
     componentWillUnmount() {
