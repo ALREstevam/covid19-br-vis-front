@@ -171,8 +171,8 @@ export default class MapDataExtractor {
         }
     }
 
+    /*
     generateChartData() {
-
         return {
             deaths: this.deathsPlotData && this.deathsPlotData.data.length > 0 ?
                 this.deathsPlotData : this.generateDeathsPlotData(),
@@ -191,58 +191,94 @@ export default class MapDataExtractor {
             casesDeathsPerLocation: this.generateCasesDeathsPerStateAndCity(),
         }
     }
+    */
 
-    generateCasesDeathsPerStateAndCity(){
+    generateCasesDeathsPerStateAndCity(maxItems = 5) {
 
         let perState = {}
         let perCity = {}
 
         const perDayData = this.filteredIndexes.map(key => this.rawData[key])
 
-        //console.log('perDayData', perDayData)
 
-        if(!perDayData || perDayData.length === 0){
-            return { perState: {}, perCity: {}, }
+        if (!perDayData || perDayData.length === 0) {
+            return {
+                states: {
+                    data: [],
+                    keys: [],
+                    index: 'state',
+                },
+                cities: {
+                    data: [],
+                    keys: [],
+                    index: 'city',
+                },
+            }
         }
 
         const lastDay = perDayData[perDayData.length - 1]
 
-        for(let report of lastDay){
+        for (let report of lastDay) {
             // state
-            if( perState.hasOwnProperty(report.state) ){
+            if (perState.hasOwnProperty(report.state)) {
                 perState[report.state] = {
                     state: report.state,
-                    deaths: report.deaths + perState[report.state].deaths,
-                    cases: report.totalCases + perState[report.state].cases
+                    "óbitos": report.deaths + perState[report.state]["óbitos"],
+                    casos: report.totalCases + perState[report.state]['casos'],
                 }
-            }
-            else{
+            } else {
                 perState[report.state] = {
                     state: report.state,
-                    deaths: report.deaths,
-                    cases: report.totalCases
+                    "óbitos": report.deaths,
+                    casos: report.totalCases,
                 }
             }
             // city
-            if( perCity.hasOwnProperty(report.city) ){
-                perState[report.city] = {
+            if (perCity.hasOwnProperty(report.city)) {
+                perCity[report.city] = {
                     city: report.city,
-                    deaths: report.deaths + perState[report.city].deaths,
-                    cases: report.totalCases + perState[report.city].cases
+                    "óbitos": report.deaths + perCity[report.city]["óbitos"],
+                    casos: report.totalCases + perCity[report.city]['casos'],
                 }
-            }
-            else{
-                perState[report.city] = {
+            } else {
+                perCity[report.city] = {
                     city: report.city,
-                    deaths: report.deaths,
-                    cases: report.totalCases
-                }
+                    "óbitos": report.deaths,
+                    casos: report.totalCases,
+                    }
             }
         }
 
-        return { 
-            perState: Object.keys( perState ).map(key => perState[key]), 
-            perCity: Object.keys( perState ).map(key => perState[key]), 
+        const sortedPerState = Object.keys(perState)
+            .map(key => perState[key])
+            .sort( (a, b) =>  b['casos'] - a['casos'] )
+
+        const sortedPerCity = Object.keys(perCity)
+            .map(key => perCity[key])
+            .sort( (a, b) =>  b['casos'] - a['casos'] )
+
+        let filteredPerState = sortedPerState
+        let filteredPerCity = sortedPerCity
+
+        if(sortedPerState.length > maxItems){
+            filteredPerState = sortedPerState.slice(0, maxItems)
+        }
+
+        if(sortedPerCity.length > maxItems){
+            filteredPerCity = sortedPerCity.slice(0, maxItems)
+        }
+    
+        return {
+            states: {
+                data: filteredPerState,
+                keys: [ 'óbitos', 'casos' ],
+                index: 'state',
+            },
+            cities: {
+                data: filteredPerCity,
+                keys: [ 'óbitos', 'casos' ],
+                index: 'city',
+            },
         }
     }
 
