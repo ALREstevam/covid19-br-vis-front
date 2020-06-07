@@ -1,103 +1,19 @@
 import React from 'react'
 import { ResponsiveBar } from '@nivo/bar'
-// make sure parent container have a defined height when using
-// responsive component, otherwise height will be 0 and
-// no chart will be rendered.
-// website examples showcase many properties,
-// you'll often use just a few of them.
 
-/*
-[
-  {
-    "country": "AD",
-    "hot dog": 147,
-    "hot dogColor": "hsl(27, 70%, 50%)",
-    "burger": 50,
-    "burgerColor": "hsl(322, 70%, 50%)",
-    "sandwich": 40,
-    "sandwichColor": "hsl(21, 70%, 50%)",
-    "kebab": 162,
-    "kebabColor": "hsl(244, 70%, 50%)",
-    "fries": 78,
-    "friesColor": "hsl(62, 70%, 50%)",
-    "donut": 170,
-    "donutColor": "hsl(6, 70%, 50%)"
-  },
-  {
-    "country": "AE",
-    "hot dog": 34,
-    "hot dogColor": "hsl(272, 70%, 50%)",
-    "burger": 63,
-    "burgerColor": "hsl(192, 70%, 50%)",
-    "sandwich": 158,
-    "sandwichColor": "hsl(359, 70%, 50%)",
-    "kebab": 12,
-    "kebabColor": "hsl(278, 70%, 50%)",
-    "fries": 36,
-    "friesColor": "hsl(219, 70%, 50%)",
-    "donut": 115,
-    "donutColor": "hsl(221, 70%, 50%)"
-  },
-
-  {
-      state: "SP",
-      casos": 0,
-      óbitos: 0,
-  }
-  {
-      state: "RJ",
-      casos": 0,
-      óbitos: 0,
-  }
-
-
-*/
-
-
-
-const BarPlot = ({ data /* see data tab */ }) => (
+const BarPlot = ({data, keys, index, xTitle, yTitle, 
+    groupMode='grouped', layout='vertical', colors=['#F47560', '#61CDBB']}) => (
     <ResponsiveBar
         data={data}
-        keys={[ 'hot dog', 'burger', 'sandwich', 'kebab', 'fries', 'donut' ]}
-        indexBy="country"
-        margin={{ top: 50, right: 130, bottom: 50, left: 60 }}
-        groupMode="grouped"
-        layout="horizontal"
-        colors={{ scheme: 'nivo' }}
-        defs={[
-            {
-                id: 'dots',
-                type: 'patternDots',
-                background: 'inherit',
-                color: '#38bcb2',
-                size: 4,
-                padding: 1,
-                stagger: true
-            },
-            {
-                id: 'lines',
-                type: 'patternLines',
-                background: 'inherit',
-                color: '#eed312',
-                rotation: -45,
-                lineWidth: 6,
-                spacing: 10
-            }
-        ]}
-        fill={[
-            {
-                match: {
-                    id: 'fries'
-                },
-                id: 'dots'
-            },
-            {
-                match: {
-                    id: 'sandwich'
-                },
-                id: 'lines'
-            }
-        ]}
+        keys={keys}
+        indexBy={index}
+        margin={{ top: 50, right: 130, bottom: 50, left: 110 }}
+        padding={0.3}
+        groupMode={groupMode}
+        layout={layout}
+        minValue={0}
+        colors={ colors }
+        
         borderColor={{ from: 'color', modifiers: [ [ 'darker', 1.6 ] ] }}
         axisTop={null}
         axisRight={null}
@@ -105,7 +21,7 @@ const BarPlot = ({ data /* see data tab */ }) => (
             tickSize: 5,
             tickPadding: 5,
             tickRotation: 0,
-            legend: 'country',
+            legend: xTitle || 'x',
             legendPosition: 'middle',
             legendOffset: 32
         }}
@@ -113,12 +29,12 @@ const BarPlot = ({ data /* see data tab */ }) => (
             tickSize: 5,
             tickPadding: 5,
             tickRotation: 0,
-            legend: 'food',
+            legend: yTitle || "y",
             legendPosition: 'middle',
-            legendOffset: -40
+            legendOffset: -90,
         }}
-        labelSkipWidth={12}
-        labelSkipHeight={12}
+        labelSkipWidth={0}
+        labelSkipHeight={0}
         labelTextColor={{ from: 'color', modifiers: [ [ 'darker', 1.6 ] ] }}
         legends={[
             {
