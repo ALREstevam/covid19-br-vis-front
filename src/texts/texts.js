@@ -60,10 +60,12 @@ export default {
     dataSource: {
         mainText: (
             <p>
-                Fonte de dados para o mapa e os gráficos:
-                <a href='https://covid19br.wcota.me/'>Número de casos confirmados de COVID-19 no Brasil</a>
+                Fonte de dados para o mapa e os gráficos: <a href='https://covid19br.wcota.me/'>Número de casos confirmados de COVID-19 no Brasil</a>
             </p>
         )
-    }
+    },
+    perLocation:{
+        explainMax: (amountCities, amountStates)=>(<p>Estes gráficos contém as {amountCities} cidades e os {amountStates} estados visíveis no mapa com a maior quantidade de casos confirmados de COVID-19.</p>)
+    },
 }
 
