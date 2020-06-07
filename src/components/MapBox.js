@@ -1,12 +1,10 @@
 import React, { Component } from 'react';
 import mapboxgl from 'mapbox-gl'
-import ReactList from 'react-list'
-import { formatDate, daysBetween, addDays } from '../common/date'
-import CityDataItem from './CityDataItem'
+import { daysBetween, addDays } from '../common/date'
 import env from '../env/envVars'
-//import Lock from './Lock'
 import { NotificationManager } from 'react-notifications';
 import LoadingOpacity from '../components/LoadingOpacity'
+import Console from './Console'
 
 mapboxgl.accessToken = env.MAPBOX_ACCESS_TOKEN
 
@@ -37,13 +35,8 @@ class MapBox extends Component {
             isMapInteractive: false,
             loadingText: 'Carregando mapa do Brasil...',
             featuresLength: undefined,
+            consoleHidden: false,
         };
-    }
-
-    renderCityListItem = (index, key) => {
-        const data = this.state.listableCities[index]
-        return <CityDataItem name={data.city} state={data.state} date={new Date(data.date)}
-            cases={data.totalCases} deaths={data.deaths} key={key} />
     }
 
     getHeatmapFeatures() {
@@ -73,51 +66,51 @@ class MapBox extends Component {
         return [[], {}]
     }
 
-    updateVisibleCities(force=false) {
+    updateVisibleCities(force = false) {
         this.setInteractive(false, this.state.map, () => {
 
-            setTimeout(()=>{
+            setTimeout(() => {
                 this.setState({
                     loadingText: 'Obtendo cidades visíveis...'
                 })
-    
+
                 let cityData, perDate, listable
                 let features = this.getHeatmapFeatures()
 
-                if ( 
+                if (
                     force ||
                     features.length < 50 ||
                     this.state.featuresLength !== features.length ||
                     this.state.animate
-                    ) {
+                ) {
 
                     this.setState({
                         loadingText: 'Gerando dados para a lista de cidades e gráficos...',
                         featuresLength: features.length
                     })
-                    
+
                     const processed = this.processVisibleCities(features)
                     cityData = processed[0]
                     perDate = processed[1]
 
                     listable = cityData.sort((a, b) => a.totalCases - b.totalCases).reverse()
-    
-                    this.setState({listableCities: listable})
+
+                    this.setState({ listableCities: listable })
 
                     this.props.onVisibleCitiesChange &&
                         this.props.onVisibleCitiesChange(cityData, perDate)
 
-                    if(!this.state.animate) setTimeout(() => {
+                    if (!this.state.animate) setTimeout(() => {
                         this.setInteractive(true, this.state.map)
                     }, 30)
                 }
                 else {
-                    if(!this.state.animate) setTimeout(() => {
+                    if (!this.state.animate) setTimeout(() => {
                         this.setInteractive(true, this.state.map)
                     }, 30)
                 }
             }, 20)
-            
+
         })
     }
 
@@ -148,7 +141,7 @@ class MapBox extends Component {
         }
     }
 
-    changeSlider(value) {
+    changeSlider = (value) => {
         let sliderValue = parseInt(value)
         this.setState({
             sliderValue: sliderValue,
@@ -165,7 +158,7 @@ class MapBox extends Component {
         this.props.onSelectedDateChanged && this.props.onSelectedDateChanged(date)
     }
 
-    handleMapTypeChange(event) {
+    handleMapTypeChange = (event) => {
         this.setState({ mapType: event.target.value })
 
         let layers = {
@@ -204,59 +197,25 @@ class MapBox extends Component {
                     text={this.state.loadingText}
                 />
 
-                <div className='console'>
-                    <h1 className='consoleTitle'>Mapa de calor: COVID-19 no Brasil</h1>
-                    <label>
-                        <span style={{ fontSize: '1.1em' }}> Até o dia <strong>{formatDate(this.state.date)}</strong> {daysAgo()}</span>
-                        <input className='slider row' type='range' min='0' max={this.state.maxDays} step='1' value={this.state.sliderValue}
-                            onChange={(e) => this.changeSlider(e.target.value)}
-                            onMouseUp={(e) => this.onSliderChangeEndedAsync(e.target.value)} />
-                    </label>
-                    <form>
-                        <label>
-                            <input name="animate" type="checkbox" checked={this.state.animate} onChange={this.handleAnimateChange} />
-                            Animar
-                        </label>
-                    </form>
-                    <form>
-                        <label>
-                            <input type="radio" value="infected" checked={this.state.mapType === 'infected'}
-                                onChange={(e) => this.handleMapTypeChange(e)} />
-                            Casos
-                       </label>
-                        <span> | </span>
-                        <label>
-                            <input type="radio" value="death" checked={this.state.mapType === 'death'}
-                                onChange={(e) => this.handleMapTypeChange(e)} />
-                            Óbitos
-                      </label>
-                    </form>
-                    <div>
-
-                    </div>
-                    <div className='cityList'>
-                        {(this.state.listableCities.length > 0) ? (<ReactList
-                            itemRenderer={/*::*/this.renderCityListItem}
-                            length={this.state.listableCities.length}
-                            type='uniform'
-                            pageSize={3}
-                        />)
-                            :
-                            (<p style={{ textAlign: 'center', fontStyle: 'italic' }}>
-                                (Use o zoom e a navegação pelo mapa para ver os detalhes de cada localidade.)</p>)}
-                    </div>
-                    <div style={{ color: 'gray', fontSize: '0.5em', bottom: 0, position: 'absolute' }}>
-                        <p>
-                            <span><strong>Zoom: </strong>{this.state.zoom}</span>
-                            <span> | </span>
-                            <span><strong>Centro: </strong>{this.state.lat}, {this.state.lng}</span>
-                        </p>
-                    </div>
-                </div>
-
+                <Console
+                    daysAgo={daysAgo()}
+                    date={this.state.date}
+                    maxDays={this.state.maxDays}
+                    onSliderChange={this.changeSlider}
+                    onSliderRelease={this.onSliderChangeEndedAsync}
+                    value={this.state.sliderValue}
+                    animated={this.state.animate}
+                    onAnimatedChange={this.handleAnimateChange}
+                    heatmapType={this.state.mapType}
+                    onHeatmapChange={this.handleMapTypeChange}
+                    cities={this.state.listableCities}
+                    zoom={this.state.zoom}
+                    lat={this.state.lat}
+                    lng={this.state.lng}
+                    hidden={this.state.consoleHidden}
+                    onHiddenChange={(hidden)=>{ this.setState({consoleHidden: hidden}) }}
+                />
                 <div style={this.props.style} ref={el => this.mapContainer = el} />
-
-
             </div>
         )
     }
@@ -266,13 +225,8 @@ class MapBox extends Component {
         const properties = ['boxZoom', 'scrollZoom', 'dragPan', 'dragRotate',
             'keyboard', 'doubleClickZoom', 'touchZoomRotate']
 
-        const enable = () => {
-            properties.forEach((prop) => { map[prop].enable() })
-        }
-
-        const disable = () => {
-            properties.forEach((prop) => { map[prop].disable() })
-        }
+        const enable = () => properties.forEach((prop) => { map[prop].enable() })
+        const disable = () => properties.forEach((prop) => { map[prop].disable() })
 
         this.setState({
             isMapInteractive: isInteractive,
@@ -283,6 +237,7 @@ class MapBox extends Component {
     }
 
     componentDidMount() {
+
         this.onSourceLoadBegin && this.onSourceLoadBegin()
 
         const map = new mapboxgl.Map({
@@ -312,7 +267,7 @@ class MapBox extends Component {
             if (this.state.loadState === 'loading') {
                 this.setState({
                     loadState: 'loaded'
-                }, ()=>{
+                }, () => {
                     this.updateVisibleCities()
                 })
             }
