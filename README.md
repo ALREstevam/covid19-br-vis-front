@@ -2,6 +2,8 @@
 
 Using data from [github.com/wcota/covid19br](https://github.com/wcota/covid19br) this project intends to visually show data about the **COVID-19**  in Brazil.
 
+Website: https://alrestevam.github.io/covid19-br-vis-front/
+
 **Note:** this is a personal project  and I'm not a specialist either in data visualization or in disease spreading, **so please take it with a grain of salt**.
 
 ![br1](README.assets/br1.gif)
