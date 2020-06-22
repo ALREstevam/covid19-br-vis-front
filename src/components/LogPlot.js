@@ -72,6 +72,7 @@ const MyResponsiveLine = ({ data /* see data tab */ }) => {
             max: 'auto',
         }}
         yScale={{ type: 'linear', min: 'auto', max: 'auto', stacked: true, reverse: false }}
+        xFormat="time:%d/%m"
         axisTop={null}
         axisRight={null}
         axisBottom={{

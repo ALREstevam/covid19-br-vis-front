@@ -142,7 +142,7 @@ const LinePLot = ({ data, colors = { scheme: 'set3' }, stacked = false, yScaleTy
 
         yScale={scales[yScaleType](stacked)}
 
-        xFormat="time:%m/%d"
+        xFormat="time:%d/%m"
         /*yFormat={}*/
 
         theme={theme}
