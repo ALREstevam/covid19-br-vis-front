@@ -1,3 +1,8 @@
+# Note
+
+As new tools emerged and the amount of data to be rendered started crashing the page eventually, I stopped adding more data on the back-end. So this website **may crash** and the **data isn't updated**.
+
+
 # COVID-19 Brazil - data visualization
 
 Using data from [github.com/wcota/covid19br](https://github.com/wcota/covid19br) this project intends to visually show data about the **COVID-19**  in Brazil.
